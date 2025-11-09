@@ -1,6 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'sonner';
-import { ThemeProvider } from 'next-themes';
+import { ThemeProvider } from '@/contexts/ThemeContext';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { RequireAuth } from '@/components/auth/RequireAuth';
 import routes from './routes';
@@ -8,7 +8,7 @@ import NotFound from './pages/NotFound';
 
 function App() {
   return (
-    <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
+    <ThemeProvider>
       <Router>
         <AuthProvider>
           <RequireAuth whiteList={['/', '/login', '/assessments', '/404']}>
