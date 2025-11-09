@@ -363,14 +363,13 @@ export default function AssessmentTake() {
         responses: answers as unknown,
         ai_insights: insights as unknown,
         score_data: {},
-        created_at: new Date().toISOString(),
       });
 
       toast.success('Assessment completed successfully!');
       navigate(`/assessment/${assessment.id}/results`);
     } catch (error) {
       console.error('Error submitting assessment:', error);
-      toast.error('Failed to submit assessment');
+      toast.error('Failed to submit assessment. Please try again.');
     } finally {
       setSubmitting(false);
     }

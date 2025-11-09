@@ -72,7 +72,6 @@ export interface UserAssessment {
   ai_insights: unknown;
   score_data: Record<string, unknown>;
   completed_at: string;
-  created_at: string;
 }
 
 export interface CoupleSession {
