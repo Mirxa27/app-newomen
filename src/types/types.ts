@@ -68,10 +68,11 @@ export interface UserAssessment {
   id: string;
   user_id: string;
   assessment_id: string;
-  responses: Record<string, unknown>;
-  ai_insights: string | null;
+  responses: unknown;
+  ai_insights: unknown;
   score_data: Record<string, unknown>;
   completed_at: string;
+  created_at: string;
 }
 
 export interface CoupleSession {

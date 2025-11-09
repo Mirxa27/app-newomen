@@ -5,6 +5,8 @@ import Dashboard from './pages/Dashboard';
 import Chat from './pages/Chat';
 import BalanceWheel from './pages/BalanceWheel';
 import Assessments from './pages/Assessments';
+import AssessmentTake from './pages/AssessmentTake';
+import AssessmentResults from './pages/AssessmentResults';
 import Wellness from './pages/Wellness';
 import Community from './pages/Community';
 import CoupleChallenge from './pages/CoupleChallenge';
@@ -53,6 +55,18 @@ const routes: RouteConfig[] = [
     path: '/assessments',
     element: <Assessments />,
     visible: true,
+  },
+  {
+    name: 'Take Assessment',
+    path: '/assessment/:id',
+    element: <AssessmentTake />,
+    visible: false,
+  },
+  {
+    name: 'Assessment Results',
+    path: '/assessment/:id/results',
+    element: <AssessmentResults />,
+    visible: false,
   },
   {
     name: 'Wellness',
