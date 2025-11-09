@@ -9,72 +9,127 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    --radius: 0.625rem;
-    --background: 300 50% 100%;
-    --foreground: 300 0% 4%;
-    --card: 300 50% 100%;
-    --card-foreground: 300 0% 4%;
-    --popover: 300 50% 100%;
-    --popover-foreground: 300 0% 4%;
-    --primary: 330 0% 9%;
-    --primary-foreground: 300 0% 98%;
-    --secondary: 300 0% 96%;
-    --secondary-foreground: 330 0% 9%;
-    --muted: 300 0% 96%;
-    --muted-foreground: 300 0% 45%;
-    --accent: 300 0% 96%;
-    --accent-foreground: 330 0% 9%;
-    --destructive: 352 124% 41%;
-    --border: 330 0% 90%;
-    --input: 330 0% 90%;
-    --ring: 0 0% 63%;
-    --chart-1: 24 138% 40%;
-    --chart-2: 176 177% 21%;
-    --chart-3: 196 72% 23%;
-    --chart-4: 47 160% 39%;
-    --chart-5: 41 156% 39%;
-    --sidebar: 300 0% 98%;
-    --sidebar-foreground: 300 0% 4%;
-    --sidebar-primary: 330 0% 9%;
-    --sidebar-primary-foreground: 300 0% 98%;
-    --sidebar-accent: 300 0% 96%;
-    --sidebar-accent-foreground: 330 0% 9%;
-    --sidebar-border: 330 0% 90%;
-    --sidebar-ring: 0 0% 63%;
+    --radius: 1.5rem;
+    
+    /* Mystical Cosmic Purple Theme */
+    --background: 258 50% 98%;
+    --foreground: 258 20% 10%;
+    
+    /* Cosmic Purple - Primary Brand Color */
+    --primary: 258 70% 65%;
+    --primary-foreground: 0 0% 100%;
+    --primary-glow: 258 80% 75%;
+    
+    /* Mystical Gradient Colors */
+    --secondary: 270 60% 70%;
+    --secondary-foreground: 0 0% 100%;
+    
+    --accent: 320 70% 75%;
+    --accent-foreground: 0 0% 100%;
+    
+    /* Muted/Neutral */
+    --muted: 258 20% 95%;
+    --muted-foreground: 258 10% 45%;
+    
+    /* Card with glassmorphism */
+    --card: 258 30% 97%;
+    --card-foreground: 258 20% 10%;
+    
+    --popover: 258 30% 97%;
+    --popover-foreground: 258 20% 10%;
+    
+    /* Borders and Inputs */
+    --border: 258 20% 85%;
+    --input: 258 20% 90%;
+    --ring: 258 70% 65%;
+    
+    /* Destructive */
+    --destructive: 0 70% 60%;
+    --destructive-foreground: 0 0% 100%;
+    
+    /* Elemental Colors for Astrology */
+    --fire: 0 80% 65%;
+    --earth: 120 50% 55%;
+    --air: 200 70% 65%;
+    --water: 270 60% 70%;
+    
+    /* Chart Colors */
+    --chart-1: 258 70% 65%;
+    --chart-2: 270 60% 70%;
+    --chart-3: 320 70% 75%;
+    --chart-4: 200 70% 65%;
+    --chart-5: 120 50% 55%;
+    
+    /* Sidebar */
+    --sidebar: 258 30% 97%;
+    --sidebar-foreground: 258 20% 10%;
+    --sidebar-primary: 258 70% 65%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 258 20% 95%;
+    --sidebar-accent-foreground: 258 20% 10%;
+    --sidebar-border: 258 20% 85%;
+    --sidebar-ring: 258 70% 65%;
   }
 
   .dark {
-    --background: 300 0% 4%;
-    --foreground: 300 0% 98%;
-    --card: 330 0% 9%;
-    --card-foreground: 300 0% 98%;
-    --popover: 330 0% 9%;
-    --popover-foreground: 300 0% 98%;
-    --primary: 330 0% 90%;
-    --primary-foreground: 330 0% 9%;
-    --secondary: 320 0% 15%;
-    --secondary-foreground: 300 0% 98%;
-    --muted: 320 0% 15%;
-    --muted-foreground: 0 0% 63%;
-    --accent: 320 0% 15%;
-    --accent-foreground: 300 0% 98%;
-    --destructive: 359 100% 70%; 
-    --border: 300 50% 100% / 10%;
-    --input: 300 50% 100% / 15%;
-    --ring: 300 0% 45%;
-    --chart-1: 225 84% 49%;
-    --chart-2: 164 100% 26%;
-    --chart-3: 41 100% 39%;
-    --chart-4: 272 100% 65%;
-    --chart-5: 345 100% 56%;
-    --sidebar: 330 0% 9%;
-    --sidebar-foreground: 300 0% 98%;
-    --sidebar-primary: 225 84% 49%;
-    --sidebar-primary-foreground: 300 0% 98%;
-    --sidebar-accent: 320 0% 15%;
-    --sidebar-accent-foreground: 300 0% 98%;
-    --sidebar-border: 300 50% 0% / 10%;
-    --sidebar-ring: 300 0% 45%;
+    /* Deep Space Black Background */
+    --background: 258 40% 6%;
+    --foreground: 258 10% 95%;
+    
+    /* Cosmic Purple - Brighter in dark mode */
+    --primary: 258 70% 65%;
+    --primary-foreground: 258 40% 6%;
+    --primary-glow: 258 80% 75%;
+    
+    /* Mystical Gradient Colors */
+    --secondary: 270 60% 60%;
+    --secondary-foreground: 0 0% 100%;
+    
+    --accent: 320 70% 70%;
+    --accent-foreground: 0 0% 100%;
+    
+    /* Muted/Neutral */
+    --muted: 258 20% 15%;
+    --muted-foreground: 258 10% 65%;
+    
+    /* Card with glassmorphism */
+    --card: 258 30% 10%;
+    --card-foreground: 258 10% 95%;
+    
+    --popover: 258 30% 10%;
+    --popover-foreground: 258 10% 95%;
+    
+    /* Borders and Inputs */
+    --border: 258 20% 20%;
+    --input: 258 20% 15%;
+    --ring: 258 70% 65%;
+    
+    /* Destructive */
+    --destructive: 0 70% 60%;
+    --destructive-foreground: 0 0% 100%;
+    
+    /* Elemental Colors for Astrology */
+    --fire: 0 80% 65%;
+    --earth: 120 50% 55%;
+    --air: 200 70% 65%;
+    --water: 270 60% 70%;
+    
+    /* Chart Colors */
+    --chart-1: 258 70% 65%;
+    --chart-2: 270 60% 70%;
+    --chart-3: 320 70% 75%;
+    --chart-4: 200 70% 65%;
+    --chart-5: 120 50% 55%;
+    
+    /* Sidebar */
+    --sidebar: 258 30% 10%;
+    --sidebar-foreground: 258 10% 95%;
+    --sidebar-primary: 258 70% 65%;
+    --sidebar-primary-foreground: 258 40% 6%;
+    --sidebar-accent: 258 20% 15%;
+    --sidebar-accent-foreground: 258 10% 95%;
+    --sidebar-border: 258 20% 20%;
+    --sidebar-ring: 258 70% 65%;
   }
 }
 
@@ -85,5 +140,94 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+@layer utilities {
+  .gradient-text {
+    background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-glow)));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+  }
+
+  .glass-card {
+    background: hsl(var(--card) / 0.7);
+    backdrop-filter: blur(12px) saturate(180%);
+    border: 1px solid hsl(var(--border) / 0.5);
+  }
+
+  .cosmic-gradient {
+    background: linear-gradient(135deg, 
+      hsl(var(--primary)) 0%, 
+      hsl(var(--secondary)) 50%, 
+      hsl(var(--accent)) 100%
+    );
+  }
+
+  .cosmic-glow {
+    box-shadow: 0 0 40px hsl(var(--primary) / 0.3),
+                0 0 80px hsl(var(--primary-glow) / 0.2);
+  }
+
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
+
+  .animate-pulse-slow {
+    animation: pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  .animate-shimmer {
+    animation: shimmer 3s linear infinite;
+  }
+
+  @keyframes float {
+    0%, 100% {
+      transform: translateY(0px);
+    }
+    50% {
+      transform: translateY(-20px);
+    }
+  }
+
+  @keyframes shimmer {
+    0% {
+      background-position: -1000px 0;
+    }
+    100% {
+      background-position: 1000px 0;
+    }
+  }
+
+  .star-field {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .star {
+    position: absolute;
+    width: 2px;
+    height: 2px;
+    background: white;
+    border-radius: 50%;
+    animation: twinkle 3s infinite;
+  }
+
+  @keyframes twinkle {
+    0%, 100% {
+      opacity: 0.3;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 1;
+      transform: scale(1.2);
+    }
   }
 }

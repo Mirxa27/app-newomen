@@ -1,0 +1,19 @@
+/** @type {import('tailwindcss').Config} */
+export default {
+  content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
+  theme: {
+    extend: {
+      fontFamily: {
+        serif: ['Georgia', 'Cambria', 'Times New Roman', 'Times', 'serif'],
+      },
+      animation: {
+        'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+        'shimmer': 'shimmer 3s linear infinite',
+      },
+      backgroundSize: {
+        '200%': '200% 100%',
+      },
+    },
+  },
+  plugins: [],
+};
