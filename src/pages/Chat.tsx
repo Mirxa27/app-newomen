@@ -6,6 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { CosmicBackground } from '@/components/cosmic/CosmicBackground';
 import { Send, Image as ImageIcon, Loader2, Sparkles } from 'lucide-react';
 import { db } from '@/db/api';
+import { supabase } from '@/db/supabase';
 import type { Conversation } from '@/types/types';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
@@ -57,23 +58,6 @@ export default function Chat() {
     }
   };
 
-  const generateNewMeResponse = (userMessage: string): string => {
-    const responses = [
-      `Interesting. But you're holding back. What are you not telling me?`,
-      `That's surface level. Let's go deeper. What's the real reason behind that?`,
-      `I hear what you're saying, but I'm more interested in what you're NOT saying. What are you avoiding?`,
-      `Okay, but on a scale of 1-10, how much are you lying to yourself about this right now?`,
-      `You're that person who smiles when they hate the joke. Am I wrong?`,
-      `Keep going, but control your own breathing; you think 'later' is a safe word. It's not. It's a death sentence.`,
-      `You hate mirrors, but not because you look ugly; you hate remembering you choose this version of yourself every day.`,
-      `That's a pattern. I've noticed it before. Want to talk about why you keep doing this?`,
-      `Interesting choice of words. What does that really mean to you?`,
-      `I remember you mentioned something similar before. See the connection?`,
-    ];
-    
-    return responses[Math.floor(Math.random() * responses.length)];
-  };
-
   const handleSend = async () => {
     if (!message.trim() || !profile || loading) return;
 
@@ -82,6 +66,7 @@ export default function Chat() {
     setLoading(true);
 
     try {
+      // Save user message
       const userConv = await db.conversations.create({
         user_id: profile.id,
         message: userMessage,
@@ -92,9 +77,34 @@ export default function Chat() {
 
       setConversations((prev) => [...prev, userConv]);
 
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      // Call Edge Function to get AI response
+      const { data: functionData, error: functionError } = await supabase.functions.invoke(
+        'newme-chat',
+        {
+          body: {
+            userMessage,
+            conversationHistory: conversations.map(c => ({
+              sender: c.sender,
+              message: c.message,
+              created_at: c.created_at,
+            })),
+            userProfile: {
+              nickname: profile.nickname,
+              preferences: profile.personality_traits,
+            },
+          },
+        }
+      );
 
-      const aiResponse = generateNewMeResponse(userMessage);
+      if (functionError) {
+        console.error('Edge Function error:', functionError);
+        toast.error('Failed to get response from NewMe');
+        return;
+      }
+
+      const aiResponse = functionData.response;
+
+      // Save AI response
       const aiConv = await db.conversations.create({
         user_id: profile.id,
         message: aiResponse,
@@ -105,6 +115,7 @@ export default function Chat() {
 
       setConversations((prev) => [...prev, aiConv]);
 
+      // Randomly create memories for important conversations
       if (Math.random() > 0.7) {
         await db.memories.create({
           user_id: profile.id,

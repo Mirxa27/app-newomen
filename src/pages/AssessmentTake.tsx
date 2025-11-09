@@ -10,6 +10,7 @@ import { Progress } from '@/components/ui/progress';
 import { CosmicBackground } from '@/components/cosmic/CosmicBackground';
 import { ChevronLeft, ChevronRight, Check } from 'lucide-react';
 import { db } from '@/db/api';
+import { supabase } from '@/db/supabase';
 import type { Assessment } from '@/types/types';
 import { toast } from 'sonner';
 
@@ -355,8 +356,31 @@ export default function AssessmentTake() {
     try {
       setSubmitting(true);
       
-      const insights = generateInsights(assessment.category, answers, questions);
+      // Call Edge Function to generate AI insights
+      const { data: functionData, error: functionError } = await supabase.functions.invoke(
+        'generate-assessment-insights',
+        {
+          body: {
+            category: assessment.category,
+            assessmentTitle: assessment.title,
+            answers: answers.map((a, i) => ({
+              questionId: a.question_id,
+              questionText: questions.find(q => q.id === a.question_id)?.text || '',
+              answer: a.answer,
+            })),
+          },
+        }
+      );
+
+      if (functionError) {
+        console.error('Edge Function error:', functionError);
+        toast.error('Failed to generate insights. Please try again.');
+        return;
+      }
+
+      const insights = functionData.insights;
       
+      // Save assessment results to database
       await db.userAssessments.create({
         user_id: profile.id,
         assessment_id: assessment.id,
@@ -373,82 +397,6 @@ export default function AssessmentTake() {
     } finally {
       setSubmitting(false);
     }
-  };
-
-  const generateInsights = (category: string, answers: Answer[], questions: Question[]) => {
-    const insights: Record<string, unknown> = {
-      category,
-      completed_at: new Date().toISOString(),
-      total_questions: questions.length,
-      summary: '',
-      traits: [],
-      recommendations: []
-    };
-
-    const scaleAnswers = answers.filter(a => {
-      const q = questions.find(q => q.id === a.question_id);
-      return q?.type === 'scale';
-    });
-
-    if (scaleAnswers.length > 0) {
-      const avgScore = scaleAnswers.reduce((sum, a) => sum + Number(a.answer), 0) / scaleAnswers.length;
-      insights.average_score = Math.round(avgScore * 10) / 10;
-    }
-
-    const categoryInsights: Record<string, { summary: string; traits: string[]; recommendations: string[] }> = {
-      personality: {
-        summary: 'Your personality profile reveals a unique blend of traits that shape how you interact with the world.',
-        traits: ['Self-aware', 'Adaptable', 'Authentic', 'Growth-oriented'],
-        recommendations: [
-          'Continue exploring your authentic self through journaling',
-          'Practice mindfulness to deepen self-awareness',
-          'Embrace both your strengths and areas for growth'
-        ]
-      },
-      relationships: {
-        summary: 'Your relationship patterns show how you connect, communicate, and create bonds with others.',
-        traits: ['Emotionally aware', 'Communicative', 'Committed', 'Empathetic'],
-        recommendations: [
-          'Practice active listening in your relationships',
-          'Set healthy boundaries while staying connected',
-          'Express your needs clearly and compassionately'
-        ]
-      },
-      career: {
-        summary: 'Your career profile highlights your professional values, work style, and aspirations.',
-        traits: ['Driven', 'Purpose-oriented', 'Strategic', 'Collaborative'],
-        recommendations: [
-          'Align your work with your core values',
-          'Seek opportunities for continuous learning',
-          'Build meaningful professional relationships'
-        ]
-      },
-      wellness: {
-        summary: 'Your wellness assessment reveals your current state of balance and self-care practices.',
-        traits: ['Self-caring', 'Mindful', 'Resilient', 'Balanced'],
-        recommendations: [
-          'Establish a consistent self-care routine',
-          'Practice stress management techniques daily',
-          'Prioritize rest and recovery'
-        ]
-      },
-      astrology: {
-        summary: 'Your cosmic connection shows how you relate to universal energies and celestial influences.',
-        traits: ['Intuitive', 'Spiritually aware', 'Open-minded', 'Connected'],
-        recommendations: [
-          'Track lunar cycles and their effects on you',
-          'Explore your birth chart for deeper insights',
-          'Trust your intuitive guidance'
-        ]
-      }
-    };
-
-    const categoryData = categoryInsights[category] || categoryInsights.personality;
-    insights.summary = categoryData.summary;
-    insights.traits = categoryData.traits;
-    insights.recommendations = categoryData.recommendations;
-
-    return insights;
   };
 
   if (loading) {
