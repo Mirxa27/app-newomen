@@ -4,9 +4,11 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { CosmicBackground } from '@/components/cosmic/CosmicBackground';
-import { Send, Image as ImageIcon, Loader2, Sparkles } from 'lucide-react';
+import { Send, Loader2, Sparkles } from 'lucide-react';
 import { db } from '@/db/api';
 import { supabase } from '@/db/supabase';
+import { VoiceRecorder } from '@/components/chat/VoiceRecorder';
+import { PhotoUpload } from '@/components/chat/PhotoUpload';
 import type { Conversation } from '@/types/types';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
@@ -17,8 +19,8 @@ export default function Chat() {
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (profile) {
@@ -59,20 +61,22 @@ export default function Chat() {
   };
 
   const handleSend = async () => {
-    if (!message.trim() || !profile || loading) return;
+    if ((!message.trim() && !photoUrl) || !profile || loading) return;
 
-    const userMessage = message.trim();
+    const userMessage = message.trim() || (photoUrl ? '[Photo shared]' : '');
+    const currentPhotoUrl = photoUrl;
     setMessage('');
+    setPhotoUrl(null);
     setLoading(true);
 
     try {
-      // Save user message
+      // Save user message with photo
       const userConv = await db.conversations.create({
         user_id: profile.id,
         message: userMessage,
         sender: 'user',
-        photo_url: null,
-        context_data: {},
+        photo_url: currentPhotoUrl,
+        context_data: currentPhotoUrl ? { hasPhoto: true } : {},
       });
 
       setConversations((prev) => [...prev, userConv]);
@@ -82,7 +86,9 @@ export default function Chat() {
         'newme-chat',
         {
           body: {
-            userMessage,
+            userMessage: currentPhotoUrl 
+              ? `${userMessage} [User shared a photo: ${currentPhotoUrl}]`
+              : userMessage,
             conversationHistory: conversations.map(c => ({
               sender: c.sender,
               message: c.message,
@@ -128,52 +134,6 @@ export default function Chat() {
     } catch (error) {
       console.error('Error sending message:', error);
       toast.error('Failed to send message');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !profile) return;
-
-    try {
-      setLoading(true);
-      const photoUrl = await db.storage.uploadPhoto(profile.id, file);
-      
-      const userConv = await db.conversations.create({
-        user_id: profile.id,
-        message: '[Photo shared]',
-        sender: 'user',
-        photo_url: photoUrl,
-        context_data: {},
-      });
-
-      setConversations((prev) => [...prev, userConv]);
-
-      await db.photoMemories.create({
-        user_id: profile.id,
-        photo_url: photoUrl,
-        context: 'Shared in conversation',
-        ai_analysis: {},
-        conversation_id: userConv.id,
-      });
-
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-
-      const aiConv = await db.conversations.create({
-        user_id: profile.id,
-        message: "Interesting photo. What's the story behind it? And more importantly, what are you not telling me about it?",
-        sender: 'newme',
-        photo_url: null,
-        context_data: {},
-      });
-
-      setConversations((prev) => [...prev, aiConv]);
-      toast.success('Photo uploaded successfully');
-    } catch (error) {
-      console.error('Error uploading photo:', error);
-      toast.error('Failed to upload photo');
     } finally {
       setLoading(false);
     }
@@ -249,33 +209,26 @@ export default function Chat() {
           </div>
 
           <div className="border-t border-border p-4">
-            <div className="flex gap-2">
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={handleImageUpload}
-              />
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => fileInputRef.current?.click()}
+            <div className="flex gap-2 items-end">
+              <VoiceRecorder
+                onTranscript={(text) => setMessage(text)}
                 disabled={loading}
-              >
-                <ImageIcon className="w-5 h-5" />
-              </Button>
+              />
+              <PhotoUpload
+                onPhotoUploaded={(url) => setPhotoUrl(url)}
+                disabled={loading}
+              />
               <Textarea
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 onKeyDown={handleKeyPress}
                 placeholder="Type your message... (Press Enter to send)"
-                className="min-h-[60px] resize-none"
+                className="min-h-[60px] resize-none flex-1"
                 disabled={loading}
               />
               <Button
                 onClick={handleSend}
-                disabled={!message.trim() || loading}
+                disabled={(!message.trim() && !photoUrl) || loading}
                 size="icon"
                 className="cosmic-gradient"
               >
