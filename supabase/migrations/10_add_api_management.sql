@@ -338,3 +338,16 @@ FROM api_providers;
 
 -- Grant access to the view
 GRANT SELECT ON api_providers_safe TO authenticated;
+
+-- RPC function to increment template usage count
+CREATE OR REPLACE FUNCTION increment_template_usage(template_id uuid)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+BEGIN
+  UPDATE prompt_templates
+  SET usage_count = usage_count + 1
+  WHERE id = template_id;
+END;
+$$;

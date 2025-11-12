@@ -16,7 +16,8 @@ import {
   Settings,
   Brain,
   Mic,
-  FileCode
+  FileCode,
+  Zap
 } from 'lucide-react';
 import { db } from '@/db/api';
 import { toast } from 'sonner';
@@ -153,9 +154,15 @@ export default function AdminDashboard() {
       link: '/admin/ai-models',
     },
     {
+      title: 'AI Voices',
+      description: 'Manage text-to-speech voices',
+      icon: Mic,
+      link: '/admin/ai-voices',
+    },
+    {
       title: 'AI Behaviors',
       description: 'Configure AI personalities and behaviors',
-      icon: Mic,
+      icon: Zap,
       link: '/admin/ai-behaviors',
     },
     {

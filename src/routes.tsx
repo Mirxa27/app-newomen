@@ -24,6 +24,7 @@ import SubscriptionManagement from './pages/admin/SubscriptionManagement';
 import Analytics from './pages/admin/Analytics';
 import ApiProviders from './pages/admin/ApiProviders';
 import AiModels from './pages/admin/AiModels';
+import AiVoices from './pages/admin/AiVoices';
 import AiBehaviors from './pages/admin/AiBehaviors';
 import PromptTemplates from './pages/admin/PromptTemplates';
 
@@ -183,6 +184,12 @@ const routes: RouteConfig[] = [
     name: 'AI Models',
     path: '/admin/ai-models',
     element: <AiModels />,
+    visible: false,
+  },
+  {
+    name: 'AI Voices',
+    path: '/admin/ai-voices',
+    element: <AiVoices />,
     visible: false,
   },
   {
