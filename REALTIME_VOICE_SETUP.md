@@ -1,13 +1,13 @@
-# OpenAI Realtime API - Voice Chat Setup Guide
+# Real-Time Voice Chat Setup Guide
 
 ## Overview
 
-The Newomen platform now features **real-time voice conversations** with NewMe using OpenAI's GPT-4o Realtime Mini model. This enables natural, low-latency speech-to-speech interactions without intermediate text transcription.
+The Newomen platform now features **real-time voice conversations** with NewMe using advanced speech-to-speech AI technology. This enables natural, low-latency interactions without intermediate text transcription.
 
 ## Features Implemented
 
 ### ✅ Core Voice Chat Features
-- **Native Speech-to-Speech**: Audio input directly to audio output via OpenAI Realtime API
+- **Native Speech-to-Speech**: Audio input directly to audio output via real-time AI
 - **Real-time Audio Streaming**: Low-latency bidirectional WebSocket communication
 - **Voice Activity Detection (VAD)**: Automatic turn-taking with server-side detection
 - **Audio Visualization**: Real-time waveform display during conversations
@@ -32,8 +32,8 @@ The Newomen platform now features **real-time voice conversations** with NewMe u
 
 ```
 ┌─────────────┐         ┌──────────────────┐         ┌─────────────────┐
-│   Browser   │ ◄─────► │ Supabase Edge    │ ◄─────► │ OpenAI Realtime │
-│  (Frontend) │  HTTPS  │    Function      │ WebSocket│      API        │
+│   Browser   │ ◄─────► │ Supabase Edge    │ ◄─────► │  Real-Time AI   │
+│  (Frontend) │  HTTPS  │    Function      │ WebSocket│     Service     │
 └─────────────┘         └──────────────────┘         └─────────────────┘
       │                          │
       │                          │
@@ -46,23 +46,22 @@ The Newomen platform now features **real-time voice conversations** with NewMe u
 
 ## Setup Instructions
 
-### 1. Get OpenAI API Key
+### 1. Get AI API Key
 
-1. Go to [OpenAI Platform](https://platform.openai.com/api-keys)
-2. Create a new API key
-3. Copy the key (starts with `sk-proj-...`)
+1. Obtain your AI service API key from your provider dashboard
+2. Copy the key securely
 
 ### 2. Add API Key to Supabase
 
-The OpenAI API key must be added as a Supabase secret (not in `.env` file):
+The AI API key must be added as a Supabase secret (not in `.env` file):
 
 ```bash
 # Via Supabase CLI (if installed)
-supabase secrets set OPENAI_API_KEY=your_openai_api_key_here
+supabase secrets set AI_API_KEY=your_api_key_here
 
 # Or via Supabase Dashboard:
 # 1. Go to Project Settings > Edge Functions
-# 2. Add secret: OPENAI_API_KEY = your_key_here
+# 2. Add secret: AI_API_KEY = your_key_here
 ```
 
 ### 3. Verify Edge Function Deployment
@@ -84,11 +83,11 @@ The `realtime-voice-session` Edge Function should already be deployed. Verify:
 
 ## Technical Details
 
-### OpenAI Realtime API Configuration
+### Real-Time AI Configuration
 
 ```typescript
 {
-  model: 'gpt-4o-realtime-preview-2024-12-17',
+  model: 'advanced-realtime-model',
   voice: 'alloy', // Options: alloy, echo, shimmer
   input_audio_format: 'pcm16',
   output_audio_format: 'pcm16',
@@ -132,7 +131,7 @@ NewMe can call these functions during voice conversations:
 
 After each voice conversation:
 1. Transcript is saved to `voice_sessions` table
-2. AI extracts 3-5 key insights using GPT-4o-mini
+2. AI extracts 3-5 key insights automatically
 3. Insights are saved to `newme_memories` table
 4. Categories: personality, fear, desire, pattern, shadow
 
@@ -156,16 +155,11 @@ CREATE TABLE voice_sessions (
 
 ## Cost Considerations
 
-### OpenAI Realtime API Pricing (as of 2024)
+### Real-Time Voice API Pricing
 
-- **Audio Input**: $0.06 per minute
-- **Audio Output**: $0.24 per minute
-- **Text Input/Output**: $2.50 / $10.00 per 1M tokens
+Voice conversations consume AI service credits based on duration and usage.
 
-**Example**: A 10-minute voice conversation costs approximately:
-- Input: 10 min × $0.06 = $0.60
-- Output: 10 min × $0.24 = $2.40
-- **Total**: ~$3.00 per 10-minute conversation
+**Example**: A 10-minute voice conversation may consume significant credits depending on your service plan.
 
 ### Cost Optimization Tips
 
@@ -209,7 +203,7 @@ CREATE TABLE voice_sessions (
 **Solution**: 
 - Check network connection
 - Reduce audio quality if needed
-- Consider geographic proximity to OpenAI servers
+- Consider geographic proximity to AI service servers
 
 ## Future Enhancements
 
@@ -221,7 +215,7 @@ CREATE TABLE voice_sessions (
 - [ ] Conversation summaries
 - [ ] Voice cloning for personalized NewMe voice
 - [ ] Multi-language support
-- [ ] Offline mode with local STT/TTS
+- [ ] Offline mode with local speech processing
 
 ### Advanced Features
 
@@ -241,7 +235,7 @@ CREATE TABLE voice_sessions (
 
 ### Audio Privacy
 
-- Audio is streamed directly to OpenAI
+- Audio is streamed directly to AI service
 - Not stored on Supabase servers
 - Only transcripts are saved
 - Users can delete their voice sessions
@@ -254,10 +248,9 @@ CREATE TABLE voice_sessions (
 
 ## Resources
 
-- [OpenAI Realtime API Documentation](https://platform.openai.com/docs/guides/realtime)
-- [OpenAI Realtime API Reference](https://platform.openai.com/docs/api-reference/realtime)
-- [Web Audio API Documentation](https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API)
-- [Supabase Edge Functions](https://supabase.com/docs/guides/functions)
+- Web Audio API Documentation
+- Supabase Edge Functions Guide
+- Real-Time Voice Chat Best Practices
 
 ## Support
 
@@ -269,4 +262,4 @@ For issues or questions:
 
 ---
 
-**Note**: The voice chat feature requires an active OpenAI API key with access to the Realtime API. Without the key, the system will display a mock session message.
+**Note**: The voice chat feature requires an active AI service API key. Without the key, the system will display a mock session message.

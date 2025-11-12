@@ -1,12 +1,12 @@
 # Newomen AI Platform - Implementation Summary
 
-## 🎉 Major Achievement: OpenAI Realtime API Integration
+## 🎉 Major Achievement: Real-Time Voice Chat Integration
 
-The Newomen platform now features **cutting-edge real-time voice conversations** with NewMe using OpenAI's GPT-4o Realtime Mini model - one of the most advanced speech-to-speech AI systems available.
+The Newomen platform now features **cutting-edge real-time voice conversations** with NewMe using advanced speech-to-speech AI technology - one of the most sophisticated conversational AI systems available.
 
 ## ✅ Completed Features
 
-### 1. OpenAI Realtime API Voice Chat (NEW!)
+### 1. Real-Time Voice Chat (NEW!)
 
 **Revolutionary Speech-to-Speech Technology**
 - Native audio-to-audio processing (no intermediate text transcription)
@@ -67,8 +67,8 @@ The Newomen platform now features **cutting-edge real-time voice conversations**
 
 **Deployed Functions**
 1. `generate-assessment-insights`: AI-powered assessment results
-2. `newme-chat`: Text-based chat with Claude
-3. `realtime-voice-session`: OpenAI Realtime API proxy (NEW!)
+2. `newme-chat`: Text-based chat with AI
+3. `realtime-voice-session`: Real-time voice chat proxy (NEW!)
 
 ## 📁 File Structure
 
@@ -109,8 +109,7 @@ The Newomen platform now features **cutting-edge real-time voice conversations**
 
 ### Backend
 - **Supabase** (PostgreSQL, Storage, Edge Functions)
-- **OpenAI GPT-4o Realtime Mini** for voice chat
-- **Anthropic Claude 3.5 Sonnet** for text chat
+- **Advanced AI Models** for voice and text chat
 - **Deno** runtime for Edge Functions
 
 ### Audio Processing
@@ -144,20 +143,19 @@ The Newomen platform now features **cutting-edge real-time voice conversations**
 
 ## 🚀 Setup Instructions
 
-### 1. OpenAI API Key (Required for Voice Chat)
+### 1. AI API Key (Required for Voice Chat)
 
 ```bash
-# Get your key from: https://platform.openai.com/api-keys
+# Get your key from your AI service provider dashboard
 # Add to Supabase Dashboard > Project Settings > Edge Functions > Secrets
-OPENAI_API_KEY=sk-proj-...
+AI_API_KEY=your_api_key_here
 ```
 
-### 2. Anthropic API Key (Optional for Text Chat)
+### 2. Additional AI Services (Optional for Text Chat)
 
 ```bash
-# Get your key from: https://console.anthropic.com/
-# Add to Supabase Dashboard Secrets
-ANTHROPIC_API_KEY=sk-ant-...
+# Add to Supabase Dashboard Secrets if needed
+TEXT_AI_API_KEY=your_text_ai_key_here
 ```
 
 ### 3. Test the Platform
@@ -170,16 +168,16 @@ ANTHROPIC_API_KEY=sk-ant-...
 
 ## 💰 Cost Considerations
 
-### OpenAI Realtime API Pricing
-- **Audio Input**: $0.06 per minute
-- **Audio Output**: $0.24 per minute
-- **Example**: 10-minute conversation ≈ $3.00
+### Real-Time Voice API Pricing
+- Voice conversations consume AI service credits based on duration
+- Costs vary by service provider and usage plan
+- **Example**: Extended conversations may consume significant credits
 
 ### Recommendations
 - Implement conversation duration limits
 - Set user quotas (e.g., 30 minutes per day)
 - Offer text chat as primary mode
-- Monitor usage via OpenAI dashboard
+- Monitor usage via service provider dashboard
 
 ## 🔒 Security
 
@@ -189,7 +187,7 @@ ANTHROPIC_API_KEY=sk-ant-...
 - ✅ Edge Function acts as secure proxy
 
 ### Audio Privacy
-- Audio streamed directly to OpenAI
+- Audio streamed directly to AI service
 - Not stored on Supabase servers
 - Only transcripts are saved
 - Users can delete their sessions
@@ -282,7 +280,7 @@ NewMe can call these functions during conversations:
 - Check browser compatibility
 
 **"Using mock session"**
-- Add OPENAI_API_KEY to Supabase secrets
+- Add AI_API_KEY to Supabase secrets
 - Verify Edge Function deployment
 - Check API key validity
 
@@ -312,7 +310,7 @@ NewMe can call these functions during conversations:
 ## 🎯 Next Steps
 
 ### Immediate Priorities
-1. Add OPENAI_API_KEY to enable voice chat
+1. Add AI_API_KEY to enable voice chat
 2. Test voice chat with real users
 3. Monitor usage and costs
 4. Gather user feedback
@@ -348,7 +346,7 @@ NewMe can call these functions during conversations:
 - **User-Friendly**: Intuitive UI, visual feedback
 
 ### Innovation
-This implementation represents one of the most advanced voice chat systems available, leveraging OpenAI's cutting-edge Realtime API for truly natural conversations. The integration of memory extraction, function calling, and NewMe's unique personality creates an addictive, therapeutic experience that users will love.
+This implementation represents one of the most advanced voice chat systems available, leveraging cutting-edge real-time AI technology for truly natural conversations. The integration of memory extraction, function calling, and NewMe's unique personality creates an addictive, therapeutic experience that users will love.
 
 ---
 
