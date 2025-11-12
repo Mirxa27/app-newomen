@@ -37,6 +37,15 @@ import type {
   ShadowWorkJourney,
   ShadowWorkResponse,
   ShadowJourneyType,
+  ApiProvider,
+  ApiProviderSafe,
+  AiModel,
+  AiVoice,
+  AiBehavior,
+  PromptTemplate,
+  ModelWithProvider,
+  VoiceWithProvider,
+  BehaviorWithModel,
 } from '@/types/types';
 
 export const db = {
@@ -1629,6 +1638,425 @@ export const db = {
     async completeJourney(journeyId: string): Promise<void> {
       const { error } = await supabase.rpc('complete_shadow_journey', {
         p_journey_id: journeyId,
+      });
+
+      if (error) throw error;
+    },
+  },
+
+  // API Management
+  apiProviders: {
+    async list(): Promise<ApiProviderSafe[]> {
+      const { data, error } = await supabase
+        .from('api_providers_safe')
+        .select('*')
+        .order('name', { ascending: true });
+
+      if (error) throw error;
+      return Array.isArray(data) ? data : [];
+    },
+
+    async getById(id: string): Promise<ApiProvider | null> {
+      const { data, error } = await supabase
+        .from('api_providers')
+        .select('*')
+        .eq('id', id)
+        .maybeSingle();
+
+      if (error) throw error;
+      return data;
+    },
+
+    async create(provider: Partial<ApiProvider>): Promise<ApiProvider> {
+      const { data, error } = await supabase
+        .from('api_providers')
+        .insert(provider)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+
+    async update(id: string, updates: Partial<ApiProvider>): Promise<ApiProvider> {
+      const { data, error } = await supabase
+        .from('api_providers')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+
+    async delete(id: string): Promise<void> {
+      const { error } = await supabase
+        .from('api_providers')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+    },
+
+    async testConnection(id: string): Promise<{ success: boolean; message: string }> {
+      const { data, error } = await supabase.functions.invoke('test-api-connection', {
+        body: { provider_id: id },
+      });
+
+      if (error) {
+        const errorMsg = await error?.context?.text();
+        throw new Error(errorMsg || 'Failed to test connection');
+      }
+
+      return data;
+    },
+
+    async fetchModels(id: string): Promise<AiModel[]> {
+      const { data, error } = await supabase.functions.invoke('fetch-provider-models', {
+        body: { provider_id: id },
+      });
+
+      if (error) {
+        const errorMsg = await error?.context?.text();
+        throw new Error(errorMsg || 'Failed to fetch models');
+      }
+
+      return data.models || [];
+    },
+
+    async fetchVoices(id: string): Promise<AiVoice[]> {
+      const { data, error } = await supabase.functions.invoke('fetch-provider-voices', {
+        body: { provider_id: id },
+      });
+
+      if (error) {
+        const errorMsg = await error?.context?.text();
+        throw new Error(errorMsg || 'Failed to fetch voices');
+      }
+
+      return data.voices || [];
+    },
+  },
+
+  aiModels: {
+    async list(): Promise<AiModel[]> {
+      const { data, error } = await supabase
+        .from('ai_models')
+        .select('*')
+        .order('model_name', { ascending: true });
+
+      if (error) throw error;
+      return Array.isArray(data) ? data : [];
+    },
+
+    async listWithProvider(): Promise<ModelWithProvider[]> {
+      const { data, error } = await supabase
+        .from('ai_models')
+        .select(`
+          *,
+          provider:api_providers_safe(*)
+        `)
+        .order('model_name', { ascending: true });
+
+      if (error) throw error;
+      return Array.isArray(data) ? data : [];
+    },
+
+    async getById(id: string): Promise<AiModel | null> {
+      const { data, error } = await supabase
+        .from('ai_models')
+        .select('*')
+        .eq('id', id)
+        .maybeSingle();
+
+      if (error) throw error;
+      return data;
+    },
+
+    async create(model: Partial<AiModel>): Promise<AiModel> {
+      const { data, error } = await supabase
+        .from('ai_models')
+        .insert(model)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+
+    async update(id: string, updates: Partial<AiModel>): Promise<AiModel> {
+      const { data, error } = await supabase
+        .from('ai_models')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+
+    async delete(id: string): Promise<void> {
+      const { error } = await supabase
+        .from('ai_models')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+    },
+
+    async setDefault(id: string, modelType: string): Promise<void> {
+      // First, unset all defaults for this model type
+      await supabase
+        .from('ai_models')
+        .update({ is_default: false })
+        .eq('model_type', modelType);
+
+      // Then set the new default
+      const { error } = await supabase
+        .from('ai_models')
+        .update({ is_default: true })
+        .eq('id', id);
+
+      if (error) throw error;
+    },
+  },
+
+  aiVoices: {
+    async list(): Promise<AiVoice[]> {
+      const { data, error } = await supabase
+        .from('ai_voices')
+        .select('*')
+        .order('voice_name', { ascending: true });
+
+      if (error) throw error;
+      return Array.isArray(data) ? data : [];
+    },
+
+    async listWithProvider(): Promise<VoiceWithProvider[]> {
+      const { data, error } = await supabase
+        .from('ai_voices')
+        .select(`
+          *,
+          provider:api_providers_safe(*)
+        `)
+        .order('voice_name', { ascending: true });
+
+      if (error) throw error;
+      return Array.isArray(data) ? data : [];
+    },
+
+    async getById(id: string): Promise<AiVoice | null> {
+      const { data, error } = await supabase
+        .from('ai_voices')
+        .select('*')
+        .eq('id', id)
+        .maybeSingle();
+
+      if (error) throw error;
+      return data;
+    },
+
+    async create(voice: Partial<AiVoice>): Promise<AiVoice> {
+      const { data, error } = await supabase
+        .from('ai_voices')
+        .insert(voice)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+
+    async update(id: string, updates: Partial<AiVoice>): Promise<AiVoice> {
+      const { data, error } = await supabase
+        .from('ai_voices')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+
+    async delete(id: string): Promise<void> {
+      const { error } = await supabase
+        .from('ai_voices')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+    },
+
+    async setDefault(id: string): Promise<void> {
+      // First, unset all defaults
+      await supabase
+        .from('ai_voices')
+        .update({ is_default: false });
+
+      // Then set the new default
+      const { error } = await supabase
+        .from('ai_voices')
+        .update({ is_default: true })
+        .eq('id', id);
+
+      if (error) throw error;
+    },
+  },
+
+  aiBehaviors: {
+    async list(): Promise<AiBehavior[]> {
+      const { data, error } = await supabase
+        .from('ai_behaviors')
+        .select('*')
+        .order('name', { ascending: true });
+
+      if (error) throw error;
+      return Array.isArray(data) ? data : [];
+    },
+
+    async listWithModel(): Promise<BehaviorWithModel[]> {
+      const { data, error } = await supabase
+        .from('ai_behaviors')
+        .select(`
+          *,
+          model:ai_models(*)
+        `)
+        .order('name', { ascending: true });
+
+      if (error) throw error;
+      return Array.isArray(data) ? data : [];
+    },
+
+    async getById(id: string): Promise<AiBehavior | null> {
+      const { data, error } = await supabase
+        .from('ai_behaviors')
+        .select('*')
+        .eq('id', id)
+        .maybeSingle();
+
+      if (error) throw error;
+      return data;
+    },
+
+    async create(behavior: Partial<AiBehavior>): Promise<AiBehavior> {
+      const { data, error } = await supabase
+        .from('ai_behaviors')
+        .insert(behavior)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+
+    async update(id: string, updates: Partial<AiBehavior>): Promise<AiBehavior> {
+      const { data, error } = await supabase
+        .from('ai_behaviors')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+
+    async delete(id: string): Promise<void> {
+      const { error } = await supabase
+        .from('ai_behaviors')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+    },
+
+    async setDefault(id: string): Promise<void> {
+      // First, unset all defaults
+      await supabase
+        .from('ai_behaviors')
+        .update({ is_default: false });
+
+      // Then set the new default
+      const { error } = await supabase
+        .from('ai_behaviors')
+        .update({ is_default: true })
+        .eq('id', id);
+
+      if (error) throw error;
+    },
+  },
+
+  promptTemplates: {
+    async list(): Promise<PromptTemplate[]> {
+      const { data, error } = await supabase
+        .from('prompt_templates')
+        .select('*')
+        .order('name', { ascending: true });
+
+      if (error) throw error;
+      return Array.isArray(data) ? data : [];
+    },
+
+    async listByCategory(category: string): Promise<PromptTemplate[]> {
+      const { data, error } = await supabase
+        .from('prompt_templates')
+        .select('*')
+        .eq('category', category)
+        .order('name', { ascending: true });
+
+      if (error) throw error;
+      return Array.isArray(data) ? data : [];
+    },
+
+    async getById(id: string): Promise<PromptTemplate | null> {
+      const { data, error } = await supabase
+        .from('prompt_templates')
+        .select('*')
+        .eq('id', id)
+        .maybeSingle();
+
+      if (error) throw error;
+      return data;
+    },
+
+    async create(template: Partial<PromptTemplate>): Promise<PromptTemplate> {
+      const { data, error } = await supabase
+        .from('prompt_templates')
+        .insert(template)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+
+    async update(id: string, updates: Partial<PromptTemplate>): Promise<PromptTemplate> {
+      const { data, error } = await supabase
+        .from('prompt_templates')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+
+    async delete(id: string): Promise<void> {
+      const { error } = await supabase
+        .from('prompt_templates')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+    },
+
+    async incrementUsage(id: string): Promise<void> {
+      const { error } = await supabase.rpc('increment_template_usage', {
+        template_id: id,
       });
 
       if (error) throw error;

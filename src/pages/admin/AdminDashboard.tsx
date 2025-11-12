@@ -12,7 +12,11 @@ import {
   Calendar,
   Award,
   BarChart3,
-  DollarSign
+  DollarSign,
+  Settings,
+  Brain,
+  Mic,
+  FileCode
 } from 'lucide-react';
 import { db } from '@/db/api';
 import { toast } from 'sonner';
@@ -137,16 +141,34 @@ export default function AdminDashboard() {
       link: '/admin/subscriptions',
     },
     {
+      title: 'API Providers',
+      description: 'Configure third-party API integrations',
+      icon: Settings,
+      link: '/admin/api-providers',
+    },
+    {
+      title: 'AI Models',
+      description: 'Manage available AI models',
+      icon: Brain,
+      link: '/admin/ai-models',
+    },
+    {
+      title: 'AI Behaviors',
+      description: 'Configure AI personalities and behaviors',
+      icon: Mic,
+      link: '/admin/ai-behaviors',
+    },
+    {
+      title: 'Prompt Templates',
+      description: 'Manage reusable prompt templates',
+      icon: FileCode,
+      link: '/admin/prompt-templates',
+    },
+    {
       title: 'Analytics',
       description: 'View platform analytics and insights',
       icon: BarChart3,
       link: '/admin/analytics',
-    },
-    {
-      title: 'Content Moderation',
-      description: 'Review and moderate community content',
-      icon: TrendingUp,
-      link: '/admin/moderation',
     },
   ];
 

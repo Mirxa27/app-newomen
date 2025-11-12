@@ -464,3 +464,112 @@ export interface ShadowWorkResponse {
   created_at: string;
 }
 
+// API Management Types
+export type ProviderType = 'ai_chat' | 'ai_image' | 'tts' | 'stt' | 'other';
+export type ModelType = 'chat' | 'completion' | 'embedding' | 'image' | 'audio';
+export type TestStatus = 'success' | 'failed' | 'pending' | 'never_tested';
+
+export interface ApiProvider {
+  id: string;
+  name: string;
+  type: ProviderType;
+  api_key: string | null;
+  api_url: string | null;
+  config: Record<string, unknown>;
+  is_active: boolean;
+  last_tested_at: string | null;
+  test_status: TestStatus;
+  test_message: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ApiProviderSafe {
+  id: string;
+  name: string;
+  type: ProviderType;
+  api_url: string | null;
+  config: Record<string, unknown>;
+  is_active: boolean;
+  last_tested_at: string | null;
+  test_status: TestStatus;
+  test_message: string | null;
+  has_api_key: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AiModel {
+  id: string;
+  provider_id: string;
+  model_id: string;
+  model_name: string;
+  model_type: ModelType;
+  capabilities: Record<string, unknown>;
+  parameters: Record<string, unknown>;
+  is_active: boolean;
+  is_default: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AiVoice {
+  id: string;
+  provider_id: string;
+  voice_id: string;
+  voice_name: string;
+  language: string;
+  gender: string | null;
+  accent: string | null;
+  sample_url: string | null;
+  parameters: Record<string, unknown>;
+  is_active: boolean;
+  is_default: boolean;
+  created_at: string;
+}
+
+export interface AiBehavior {
+  id: string;
+  name: string;
+  description: string | null;
+  system_prompt: string;
+  personality_traits: Record<string, unknown>;
+  response_style: Record<string, unknown>;
+  model_id: string | null;
+  is_active: boolean;
+  is_default: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PromptTemplate {
+  id: string;
+  name: string;
+  description: string | null;
+  category: string;
+  template: string;
+  variables: Array<{
+    name: string;
+    type: string;
+    description: string;
+  }>;
+  version: number;
+  is_active: boolean;
+  usage_count: number;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ModelWithProvider extends AiModel {
+  provider: ApiProviderSafe;
+}
+
+export interface VoiceWithProvider extends AiVoice {
+  provider: ApiProviderSafe;
+}
+
+export interface BehaviorWithModel extends AiBehavior {
+  model: AiModel | null;
+}
+

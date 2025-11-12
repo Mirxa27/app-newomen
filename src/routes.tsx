@@ -22,6 +22,10 @@ import AssessmentManagement from './pages/admin/AssessmentManagement';
 import DivinationManagement from './pages/admin/DivinationManagement';
 import SubscriptionManagement from './pages/admin/SubscriptionManagement';
 import Analytics from './pages/admin/Analytics';
+import ApiProviders from './pages/admin/ApiProviders';
+import AiModels from './pages/admin/AiModels';
+import AiBehaviors from './pages/admin/AiBehaviors';
+import PromptTemplates from './pages/admin/PromptTemplates';
 
 interface RouteConfig {
   name: string;
@@ -167,6 +171,30 @@ const routes: RouteConfig[] = [
     name: 'Analytics',
     path: '/admin/analytics',
     element: <Analytics />,
+    visible: false,
+  },
+  {
+    name: 'API Providers',
+    path: '/admin/api-providers',
+    element: <ApiProviders />,
+    visible: false,
+  },
+  {
+    name: 'AI Models',
+    path: '/admin/ai-models',
+    element: <AiModels />,
+    visible: false,
+  },
+  {
+    name: 'AI Behaviors',
+    path: '/admin/ai-behaviors',
+    element: <AiBehaviors />,
+    visible: false,
+  },
+  {
+    name: 'Prompt Templates',
+    path: '/admin/prompt-templates',
+    element: <PromptTemplates />,
     visible: false,
   },
 ];
