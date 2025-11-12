@@ -12,32 +12,52 @@ import NotFound from './pages/NotFound';
 function App() {
   return (
     <ThemeProvider>
-      <AuthProvider>
-        <Router>
-          <RequireAuth whiteList={['/', '/login', '/assessments', '/404']}>
-            <Toaster position="top-right" richColors />
-            <OfflineIndicator />
-            <InstallPrompt />
-            <Routes>
-              {routes.map((route, index) => {
-                // Admin routes require admin role
-                if (route.path.startsWith('/admin')) {
-                  return (
-                    <Route
-                      key={index}
-                      path={route.path}
-                      element={<RequireAdmin>{route.element}</RequireAdmin>}
-                    />
-                  );
-                }
+      <Router>
+        <AuthProvider>
+          <Toaster position="top-right" richColors />
+          <OfflineIndicator />
+          <InstallPrompt />
+          <Routes>
+            {routes.map((route, index) => {
+              // Admin routes require admin role
+              if (route.path.startsWith('/admin')) {
+                return (
+                  <Route
+                    key={index}
+                    path={route.path}
+                    element={
+                      <RequireAuth whiteList={[]}>
+                        <RequireAdmin>{route.element}</RequireAdmin>
+                      </RequireAuth>
+                    }
+                  />
+                );
+              }
+              
+              // Public routes (whitelisted)
+              const publicRoutes = ['/', '/login', '/assessments', '/404'];
+              if (publicRoutes.includes(route.path)) {
                 return <Route key={index} path={route.path} element={route.element} />;
-              })}
-              <Route path="/404" element={<NotFound />} />
-              <Route path="*" element={<Navigate to="/404" replace />} />
-            </Routes>
-          </RequireAuth>
-        </Router>
-      </AuthProvider>
+              }
+              
+              // Protected routes
+              return (
+                <Route
+                  key={index}
+                  path={route.path}
+                  element={
+                    <RequireAuth whiteList={[]}>
+                      {route.element}
+                    </RequireAuth>
+                  }
+                />
+              );
+            })}
+            <Route path="/404" element={<NotFound />} />
+            <Route path="*" element={<Navigate to="/404" replace />} />
+          </Routes>
+        </AuthProvider>
+      </Router>
     </ThemeProvider>
   );
 }
