@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { CosmicBackground } from '@/components/cosmic/CosmicBackground';
 import { User, LogOut, Upload, Save } from 'lucide-react';
 import { db } from '@/db/api';
 import { toast } from 'sonner';
@@ -70,7 +69,7 @@ export default function Profile() {
 
   return (
     <div className="min-h-screen relative">
-      <CosmicBackground />
+      
       
       <div className="relative z-10 container mx-auto px-4 py-8 max-w-4xl">
         <div className="mb-8">

@@ -4,7 +4,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { CosmicBackground } from '@/components/cosmic/CosmicBackground';
 import { Heart, Wind, Mic, Brain, Music, Play } from 'lucide-react';
 import { db } from '@/db/api';
 import type { WellnessResourceWithFavorite } from '@/types/types';
@@ -68,7 +67,7 @@ export default function Wellness() {
 
   return (
     <div className="min-h-screen relative">
-      <CosmicBackground />
+      
       
       <div className="relative z-10 container mx-auto px-4 py-8">
         <div className="mb-8">

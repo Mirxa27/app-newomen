@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router';
 import { supabase } from '@/db/supabase';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { CosmicBackground } from '@/components/cosmic/CosmicBackground';
 import { Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -40,7 +39,7 @@ export default function Login() {
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
-      <CosmicBackground />
+      
       
       <div className="relative z-10 w-full max-w-md">
         <Card className="glass-card border-2 border-primary/20 cosmic-glow">

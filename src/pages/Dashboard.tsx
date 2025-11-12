@@ -3,7 +3,6 @@ import { Link } from 'react-router';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { CosmicBackground } from '@/components/cosmic/CosmicBackground';
 import { MessageSquare, Target, Brain, Heart, Users, TrendingUp } from 'lucide-react';
 import { db } from '@/db/api';
 
@@ -33,7 +32,7 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen relative">
-      <CosmicBackground />
+      
       
       <div className="relative z-10 container mx-auto px-4 py-8">
         <div className="mb-8">

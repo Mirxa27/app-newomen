@@ -4,7 +4,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
-import { CosmicBackground } from '@/components/cosmic/CosmicBackground';
 import { db } from '@/db/api';
 import type { BalanceWheelData } from '@/types/types';
 import { toast } from 'sonner';
@@ -90,7 +89,7 @@ export default function BalanceWheel() {
 
   return (
     <div className="min-h-screen relative">
-      <CosmicBackground />
+      
       
       <div className="relative z-10 container mx-auto px-4 py-8 max-w-6xl">
         <div className="mb-8">

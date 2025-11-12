@@ -1,14 +1,11 @@
 import { Link } from 'react-router';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { CosmicBackground } from '@/components/cosmic/CosmicBackground';
 import { Sparkles, Brain, Heart, Users, Zap, Moon, Star } from 'lucide-react';
 
 export default function Landing() {
   return (
     <div className="min-h-screen relative overflow-hidden">
-      <CosmicBackground />
-      
       <div className="relative z-10">
         <header className="container mx-auto px-4 py-6 flex justify-between items-center">
           <div className="flex items-center gap-2">

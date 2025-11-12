@@ -4,7 +4,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Textarea } from '@/components/ui/textarea';
-import { CosmicBackground } from '@/components/cosmic/CosmicBackground';
 import { Heart, MessageCircle, Send, Users, Calendar } from 'lucide-react';
 import { db } from '@/db/api';
 import type { CommunityPostWithProfile } from '@/types/types';
@@ -85,7 +84,7 @@ export default function Community() {
 
   return (
     <div className="min-h-screen relative">
-      <CosmicBackground />
+      
       
       <div className="relative z-10 container mx-auto px-4 py-8 max-w-4xl">
         <div className="mb-8">

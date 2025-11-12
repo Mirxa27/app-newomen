@@ -4,7 +4,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { CosmicBackground } from '@/components/cosmic/CosmicBackground';
 import { Heart, Copy, Check } from 'lucide-react';
 import { db } from '@/db/api';
 import { toast } from 'sonner';
@@ -66,7 +65,7 @@ export default function CoupleChallenge() {
 
   return (
     <div className="min-h-screen relative">
-      <CosmicBackground />
+      
       
       <div className="relative z-10 container mx-auto px-4 py-8 max-w-4xl">
         <div className="mb-8 text-center">

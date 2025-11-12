@@ -7,7 +7,6 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Progress } from '@/components/ui/progress';
-import { CosmicBackground } from '@/components/cosmic/CosmicBackground';
 import { ChevronLeft, ChevronRight, Check } from 'lucide-react';
 import { db } from '@/db/api';
 import { supabase } from '@/db/supabase';
@@ -402,7 +401,7 @@ export default function AssessmentTake() {
   if (loading) {
     return (
       <div className="min-h-screen relative flex items-center justify-center">
-        <CosmicBackground />
+        
         <div className="relative z-10">
           <p className="text-muted-foreground">Loading assessment...</p>
         </div>
@@ -413,7 +412,7 @@ export default function AssessmentTake() {
   if (!assessment || questions.length === 0) {
     return (
       <div className="min-h-screen relative flex items-center justify-center">
-        <CosmicBackground />
+        
         <div className="relative z-10">
           <Card className="glass-card">
             <CardContent className="py-12 text-center">
@@ -430,7 +429,7 @@ export default function AssessmentTake() {
 
   return (
     <div className="min-h-screen relative">
-      <CosmicBackground />
+      
       
       <div className="relative z-10 container mx-auto px-4 py-8 max-w-4xl">
         <div className="mb-8">

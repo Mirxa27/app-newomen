@@ -4,7 +4,6 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { CosmicBackground } from '@/components/cosmic/CosmicBackground';
 import { Send, Loader2, Sparkles, MessageSquare, Phone } from 'lucide-react';
 import { db } from '@/db/api';
 import { supabase } from '@/db/supabase';
@@ -151,7 +150,7 @@ export default function Chat() {
   if (initialLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center relative">
-        <CosmicBackground />
+        
         <Loader2 className="w-8 h-8 animate-spin text-primary relative z-10" />
       </div>
     );
@@ -159,7 +158,7 @@ export default function Chat() {
 
   return (
     <div className="min-h-screen relative flex flex-col">
-      <CosmicBackground />
+      
       
       <div className="relative z-10 flex-1 flex flex-col container mx-auto px-4 py-8 max-w-4xl">
         <div className="mb-6">

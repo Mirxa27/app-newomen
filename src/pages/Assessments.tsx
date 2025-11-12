@@ -5,7 +5,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { CosmicBackground } from '@/components/cosmic/CosmicBackground';
 import { Brain, Heart, Briefcase, TrendingUp, Star, Lock, CheckCircle2 } from 'lucide-react';
 import { db } from '@/db/api';
 import type { Assessment } from '@/types/types';
@@ -57,7 +56,7 @@ export default function Assessments() {
 
   return (
     <div className="min-h-screen relative">
-      <CosmicBackground />
+      
       
       <div className="relative z-10 container mx-auto px-4 py-8">
         <div className="mb-8">
