@@ -44,10 +44,10 @@ export default function Login() {
       <div className="relative z-10 w-full max-w-md">
         <Card className="glass-card border-2 border-primary/20 cosmic-glow">
           <CardHeader className="text-center space-y-4">
-            <div className="mx-auto w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center animate-float p-4">
+            <div className="mx-auto w-32 h-32 flex items-center justify-center animate-float">
               <img 
-                src="https://miaoda-conversation-file.s3cdn.medo.dev/user-7cvlvulsgrnk/conv-7fi4fbzoge80/20251112/file-7i2ml18549vk.png" 
-                alt="Newomen Logo" 
+                src="https://miaoda-conversation-file.s3cdn.medo.dev/user-7cvlvulsgrnk/conv-7fi4fbzoge80/20251112/file-7i2qocv7vev4.png" 
+                alt="Newomen Icon" 
                 className="w-full h-full object-contain"
               />
             </div>

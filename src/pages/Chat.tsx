@@ -162,8 +162,12 @@ export default function Chat() {
       
       <div className="relative z-10 flex-1 flex flex-col container mx-auto px-4 py-8 max-w-4xl">
         <div className="mb-6">
-          <h1 className="text-3xl font-bold flex items-center gap-2">
-            <Sparkles className="w-8 h-8 text-primary" />
+          <h1 className="text-3xl font-bold flex items-center gap-3">
+            <img 
+              src="https://miaoda-conversation-file.s3cdn.medo.dev/user-7cvlvulsgrnk/conv-7fi4fbzoge80/20251112/file-7i2qocv7vev4.png" 
+              alt="NewMe" 
+              className="w-10 h-10 object-contain"
+            />
             <span className="gradient-text">NewMe</span>
           </h1>
           <p className="text-muted-foreground">
@@ -189,8 +193,17 @@ export default function Chat() {
             {conversations.map((conv) => (
               <div
                 key={conv.id}
-                className={`flex ${conv.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+                className={`flex gap-3 ${conv.sender === 'user' ? 'justify-end' : 'justify-start'}`}
               >
+                {conv.sender === 'newme' && (
+                  <div className="flex-shrink-0 w-10 h-10">
+                    <img
+                      src="https://miaoda-conversation-file.s3cdn.medo.dev/user-7cvlvulsgrnk/conv-7fi4fbzoge80/20251112/file-7i2qocv7vev4.png"
+                      alt="NewMe"
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+                )}
                 <div
                   className={`max-w-[80%] rounded-2xl p-4 ${
                     conv.sender === 'user'
@@ -213,7 +226,14 @@ export default function Chat() {
               </div>
             ))}
             {loading && (
-              <div className="flex justify-start">
+              <div className="flex justify-start gap-3">
+                <div className="flex-shrink-0 w-10 h-10">
+                  <img
+                    src="https://miaoda-conversation-file.s3cdn.medo.dev/user-7cvlvulsgrnk/conv-7fi4fbzoge80/20251112/file-7i2qocv7vev4.png"
+                    alt="NewMe"
+                    className="w-full h-full object-contain"
+                  />
+                </div>
                 <div className="bg-muted rounded-2xl p-4">
                   <Loader2 className="w-5 h-5 animate-spin" />
                 </div>

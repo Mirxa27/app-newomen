@@ -13,7 +13,11 @@ export default function Divinations() {
       <div className="max-w-4xl mx-auto space-y-6">
         <div className="space-y-2">
           <h1 className="text-3xl xl:text-4xl font-bold flex items-center gap-3">
-            <Sparkles className="h-8 w-8 text-primary" />
+            <img 
+              src="https://miaoda-conversation-file.s3cdn.medo.dev/user-7cvlvulsgrnk/conv-7fi4fbzoge80/20251112/file-7i2qocv7vev4.png" 
+              alt="NewMe" 
+              className="h-10 w-10 object-contain"
+            />
             Daily Divinations
           </h1>
           <p className="text-muted-foreground text-lg">
