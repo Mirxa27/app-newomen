@@ -9,8 +9,8 @@ import NotFound from './pages/NotFound';
 function App() {
   return (
     <ThemeProvider>
-      <Router>
-        <AuthProvider>
+      <AuthProvider>
+        <Router>
           <RequireAuth whiteList={['/', '/login', '/assessments', '/404']}>
             <Toaster position="top-right" richColors />
             <Routes>
@@ -21,8 +21,8 @@ function App() {
               <Route path="*" element={<Navigate to="/404" replace />} />
             </Routes>
           </RequireAuth>
-        </AuthProvider>
-      </Router>
+        </Router>
+      </AuthProvider>
     </ThemeProvider>
   );
 }
