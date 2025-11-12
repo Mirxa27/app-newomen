@@ -66,6 +66,7 @@ export default function Chat() {
 
     const userMessage = message.trim() || (photoUrl ? '[Photo shared]' : '');
     const currentPhotoUrl = photoUrl;
+    const messageStartTime = Date.now();
     setMessage('');
     setPhotoUrl(null);
     setLoading(true);
@@ -81,6 +82,24 @@ export default function Chat() {
       });
 
       setConversations((prev) => [...prev, userConv]);
+
+      // Track user behavior (Newme Brain)
+      await db.newmeBrain.trackBehavior(profile.id, 'chat_message', {
+        message_length: userMessage.length,
+        has_photo: !!currentPhotoUrl,
+      });
+
+      // Analyze communication patterns (Newme Brain)
+      const responseTime = Math.floor((Date.now() - messageStartTime) / 1000);
+      await db.newmeBrain.analyzeCommunication(
+        profile.id,
+        userConv.id,
+        userMessage,
+        responseTime
+      );
+
+      // Get personality insights for AI context (Newme Brain)
+      const personalityInsights = await db.newmeBrain.getPersonalityInsights(profile.id);
 
       // Call Edge Function to get AI response
       const { data: functionData, error: functionError } = await supabase.functions.invoke(
@@ -98,6 +117,7 @@ export default function Chat() {
             userProfile: {
               nickname: profile.nickname,
               preferences: profile.personality_traits,
+              personalityInsights: personalityInsights,
             },
           },
         }

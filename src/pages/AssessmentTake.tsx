@@ -355,6 +355,13 @@ export default function AssessmentTake() {
     try {
       setSubmitting(true);
       
+      // Track assessment completion (Newme Brain)
+      await db.newmeBrain.trackBehavior(profile.id, 'assessment_completed', {
+        assessment_id: assessment.id,
+        assessment_category: assessment.category,
+        questions_count: questions.length,
+      });
+      
       // Call Edge Function to generate AI insights
       const { data: functionData, error: functionError } = await supabase.functions.invoke(
         'generate-assessment-insights',

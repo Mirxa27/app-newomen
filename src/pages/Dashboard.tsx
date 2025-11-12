@@ -16,6 +16,9 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (profile) {
+      // Track dashboard visit (Newme Brain)
+      db.newmeBrain.trackBehavior(profile.id, 'dashboard_visit', {});
+      
       Promise.all([
         db.conversations.list(profile.id),
         db.userAssessments.list(profile.id),

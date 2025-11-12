@@ -304,3 +304,87 @@ export interface UserAchievement {
 export interface AchievementWithDetails extends UserAchievement {
   achievement: Achievement;
 }
+
+// Newme Brain - Stealth AI Personality Engine Types
+// These types are for internal use only and should never be exposed to users
+
+export type ZodiacSign = 
+  | 'aries' | 'taurus' | 'gemini' | 'cancer' | 'leo' | 'virgo'
+  | 'libra' | 'scorpio' | 'sagittarius' | 'capricorn' | 'aquarius' | 'pisces';
+
+export interface ZodiacTraits {
+  traits: string[];
+  element: 'fire' | 'earth' | 'air' | 'water';
+  quality: 'cardinal' | 'fixed' | 'mutable';
+  strengths: string[];
+  challenges: string[];
+}
+
+export interface CommunicationStyle {
+  avg_message_length?: number;
+  avg_vocabulary_complexity?: number;
+  avg_response_time?: number;
+  dominant_tone?: string;
+  punctuation_style?: string;
+}
+
+export interface BehaviorPatterns {
+  total_actions?: number;
+  most_active_time?: string;
+  most_active_day?: string;
+  action_types?: string[];
+  last_30_days_activity?: number;
+}
+
+export interface TemporalPatterns {
+  morning_activity?: number;
+  afternoon_activity?: number;
+  evening_activity?: number;
+  night_activity?: number;
+}
+
+export interface PersonalityScore {
+  openness?: number;
+  conscientiousness?: number;
+  extraversion?: number;
+  agreeableness?: number;
+  neuroticism?: number;
+}
+
+export interface NewmePersonalityAnalysis {
+  id: string;
+  user_id: string;
+  zodiac_sign: ZodiacSign | null;
+  zodiac_traits: ZodiacTraits;
+  communication_style: CommunicationStyle;
+  behavior_patterns: BehaviorPatterns;
+  temporal_patterns: TemporalPatterns;
+  personality_score: PersonalityScore;
+  confidence_level: number;
+  last_analyzed_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface UserBehaviorPattern {
+  id: string;
+  user_id: string;
+  action_type: string;
+  action_metadata: Record<string, unknown>;
+  timestamp: string;
+  local_time_of_day: string | null;
+  day_of_week: string | null;
+  created_at: string;
+}
+
+export interface CommunicationAnalysis {
+  id: string;
+  user_id: string;
+  conversation_id: string | null;
+  message_length: number | null;
+  vocabulary_complexity: number | null;
+  emotional_tone: string | null;
+  response_time_seconds: number | null;
+  punctuation_style: string | null;
+  created_at: string;
+}

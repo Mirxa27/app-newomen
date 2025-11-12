@@ -1177,4 +1177,111 @@ export const db = {
       }
     },
   },
+
+  // Newme Brain - Stealth AI Personality Engine API
+  // These functions are for internal use only and should never be exposed to users
+  newmeBrain: {
+    async trackBehavior(userId: string, actionType: string, metadata: Record<string, unknown> = {}): Promise<void> {
+      const { error } = await supabase.rpc('track_user_behavior', {
+        user_id_param: userId,
+        action_type_param: actionType,
+        metadata: metadata,
+      });
+      
+      if (error) {
+        console.error('Error tracking behavior:', error);
+      }
+    },
+
+    async getPersonalityInsights(userId: string): Promise<Record<string, unknown>> {
+      const { data, error } = await supabase.rpc('get_personality_insights', {
+        user_id_param: userId,
+      });
+      
+      if (error) {
+        console.error('Error getting personality insights:', error);
+        return {};
+      }
+      
+      return data || {};
+    },
+
+    async analyzeCommunication(
+      userId: string,
+      conversationId: string,
+      message: string,
+      responseTimeSeconds: number
+    ): Promise<void> {
+      // Calculate message metrics
+      const messageLength = message.length;
+      const words = message.split(/\s+/).filter(word => word.length > 0);
+      const avgWordLength = words.reduce((sum, word) => sum + word.length, 0) / (words.length || 1);
+      
+      // Simple vocabulary complexity (1-10 scale based on average word length)
+      const vocabularyComplexity = Math.min(10, Math.max(1, Math.round(avgWordLength)));
+      
+      // Detect emotional tone (simple heuristic)
+      const emotionalTone = this.detectEmotionalTone(message);
+      
+      // Detect punctuation style
+      const punctuationStyle = this.detectPunctuationStyle(message);
+      
+      const { error } = await supabase
+        .from('communication_analysis')
+        .insert({
+          user_id: userId,
+          conversation_id: conversationId,
+          message_length: messageLength,
+          vocabulary_complexity: vocabularyComplexity,
+          emotional_tone: emotionalTone,
+          response_time_seconds: responseTimeSeconds,
+          punctuation_style: punctuationStyle,
+        });
+      
+      if (error) {
+        console.error('Error analyzing communication:', error);
+      }
+    },
+
+    detectEmotionalTone(message: string): string {
+      const lowerMessage = message.toLowerCase();
+      
+      // Positive indicators
+      const positiveWords = ['happy', 'joy', 'love', 'excited', 'great', 'wonderful', 'amazing', 'good', 'better', 'best'];
+      const positiveCount = positiveWords.filter(word => lowerMessage.includes(word)).length;
+      
+      // Negative indicators
+      const negativeWords = ['sad', 'angry', 'hate', 'terrible', 'awful', 'bad', 'worse', 'worst', 'depressed', 'anxious'];
+      const negativeCount = negativeWords.filter(word => lowerMessage.includes(word)).length;
+      
+      // Neutral/questioning
+      const questionMarks = (message.match(/\?/g) || []).length;
+      
+      if (positiveCount > negativeCount) return 'positive';
+      if (negativeCount > positiveCount) return 'negative';
+      if (questionMarks > 0) return 'curious';
+      return 'neutral';
+    },
+
+    detectPunctuationStyle(message: string): string {
+      const exclamationCount = (message.match(/!/g) || []).length;
+      const questionCount = (message.match(/\?/g) || []).length;
+      const periodCount = (message.match(/\./g) || []).length;
+      const commaCount = (message.match(/,/g) || []).length;
+      
+      if (exclamationCount > 2) return 'enthusiastic';
+      if (questionCount > 1) return 'inquisitive';
+      if (commaCount > 3 && periodCount > 1) return 'formal';
+      if (message.length > 50 && periodCount === 0) return 'stream_of_consciousness';
+      return 'casual';
+    },
+
+    async updatePersonalityAnalysis(): Promise<void> {
+      const { error } = await supabase.rpc('update_personality_from_behavior');
+      
+      if (error) {
+        console.error('Error updating personality analysis:', error);
+      }
+    },
+  },
 };
