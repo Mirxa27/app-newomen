@@ -39,27 +39,58 @@ export default function CoupleChallenge() {
   };
 
   const handleJoinSession = async () => {
+    if (!profile) {
+      toast.error('Please sign in to join a session');
+      return;
+    }
+
     if (!sessionCode.trim()) {
       toast.error('Please enter a session code');
+      return;
+    }
+
+    if (sessionCode.length !== 6) {
+      toast.error('Session code must be 6 characters');
       return;
     }
 
     try {
       const session = await db.coupleSessions.getByCode(sessionCode.toUpperCase());
       if (!session) {
-        toast.error('Invalid session code');
+        toast.error('Invalid session code. Please check and try again.');
         return;
       }
 
       if (session.status === 'expired') {
-        toast.error('This session has expired');
+        toast.error('This session has expired. Please ask your partner to create a new one.');
         return;
       }
 
-      toast.info('Session joining feature coming soon!');
+      if (session.host_user_id === profile.id) {
+        toast.error('You cannot join your own session. Share this code with your partner.');
+        return;
+      }
+
+      if (session.status !== 'waiting') {
+        toast.error('This session is no longer available. Please create a new session.');
+        return;
+      }
+
+      // Update session to in_progress
+      await db.coupleSessions.update(session.id, {
+        status: 'in_progress',
+      });
+      
+      toast.success('Successfully joined the session! 🎉');
+      setSessionCode('');
+      
+      // Show next steps
+      setTimeout(() => {
+        toast.info('Both partners can now complete the compatibility assessment.');
+      }, 1500);
     } catch (error) {
       console.error('Error joining session:', error);
-      toast.error('Failed to join session');
+      toast.error('Failed to join session. Please try again.');
     }
   };
 
