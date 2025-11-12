@@ -8,8 +8,12 @@ export default function Landing() {
     <div className="min-h-screen relative overflow-hidden">
       <div className="relative z-10">
         <header className="container mx-auto px-4 py-6 flex justify-between items-center">
-          <div className="flex items-center gap-2">
-            <Sparkles className="w-8 h-8 text-primary" />
+          <div className="flex items-center gap-3">
+            <img 
+              src="https://miaoda-conversation-file.s3cdn.medo.dev/user-7cvlvulsgrnk/conv-7fi4fbzoge80/20251112/file-7i2ml18549vk.png" 
+              alt="Newomen Logo" 
+              className="h-10 w-auto"
+            />
             <span className="text-2xl font-bold gradient-text">Newomen</span>
           </div>
           <Link to="/login">

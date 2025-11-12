@@ -44,8 +44,12 @@ export default function Login() {
       <div className="relative z-10 w-full max-w-md">
         <Card className="glass-card border-2 border-primary/20 cosmic-glow">
           <CardHeader className="text-center space-y-4">
-            <div className="mx-auto w-20 h-20 rounded-full bg-primary/20 flex items-center justify-center animate-float">
-              <Sparkles className="w-10 h-10 text-primary" />
+            <div className="mx-auto w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center animate-float p-4">
+              <img 
+                src="https://miaoda-conversation-file.s3cdn.medo.dev/user-7cvlvulsgrnk/conv-7fi4fbzoge80/20251112/file-7i2ml18549vk.png" 
+                alt="Newomen Logo" 
+                className="w-full h-full object-contain"
+              />
             </div>
             <CardTitle className="text-4xl font-bold gradient-text">
               Welcome to Newomen
