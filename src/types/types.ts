@@ -205,3 +205,15 @@ export interface CommunityEventWithProfile extends CommunityEvent {
 export interface WellnessResourceWithFavorite extends WellnessResource {
   is_favorited?: boolean;
 }
+
+export interface VoiceSession {
+  id: string;
+  user_id: string;
+  session_id: string;
+  status: 'active' | 'completed' | 'error';
+  transcript: string | null;
+  metadata: Record<string, unknown>;
+  started_at: string;
+  ended_at: string | null;
+  created_at: string;
+}

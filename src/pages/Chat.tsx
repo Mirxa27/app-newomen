@@ -3,12 +3,14 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { CosmicBackground } from '@/components/cosmic/CosmicBackground';
-import { Send, Loader2, Sparkles } from 'lucide-react';
+import { Send, Loader2, Sparkles, MessageSquare, Phone } from 'lucide-react';
 import { db } from '@/db/api';
 import { supabase } from '@/db/supabase';
 import { VoiceRecorder } from '@/components/chat/VoiceRecorder';
 import { PhotoUpload } from '@/components/chat/PhotoUpload';
+import { RealtimeVoiceChat } from '@/components/chat/RealtimeVoiceChat';
 import type { Conversation } from '@/types/types';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
@@ -170,7 +172,20 @@ export default function Chat() {
           </p>
         </div>
 
-        <Card className="glass-card flex-1 flex flex-col overflow-hidden">
+        <Tabs defaultValue="text" className="flex-1 flex flex-col">
+          <TabsList className="grid w-full max-w-md mx-auto grid-cols-2 mb-4">
+            <TabsTrigger value="text" className="flex items-center gap-2">
+              <MessageSquare className="w-4 h-4" />
+              Text Chat
+            </TabsTrigger>
+            <TabsTrigger value="voice" className="flex items-center gap-2">
+              <Phone className="w-4 h-4" />
+              Voice Chat
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="text" className="flex-1 flex flex-col mt-0">
+            <Card className="glass-card flex-1 flex flex-col overflow-hidden">
           <div className="flex-1 overflow-y-auto p-6 space-y-4">
             {conversations.map((conv) => (
               <div
@@ -240,6 +255,17 @@ export default function Chat() {
             </p>
           </div>
         </Card>
+          </TabsContent>
+
+          <TabsContent value="voice" className="flex-1 flex flex-col mt-0">
+            <RealtimeVoiceChat
+              onConversationEnd={(summary) => {
+                toast.success('Voice conversation saved');
+                loadConversations();
+              }}
+            />
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
