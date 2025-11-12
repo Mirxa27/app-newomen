@@ -20,6 +20,15 @@ import type {
   CommunityEventWithProfile,
   WellnessResourceWithFavorite,
   BalanceWheelData,
+  DivinationQuestion,
+  UserDivinationResponse,
+  DailyDivinationSchedule,
+  DivinationQuestionWithResponse,
+  UserStats,
+  CrystalTransaction,
+  Achievement,
+  UserAchievement,
+  AchievementWithDetails,
 } from '@/types/types';
 
 export const db = {
@@ -847,6 +856,325 @@ export const db = {
         .getPublicUrl(filePath);
 
       return data.publicUrl;
+    },
+  },
+
+  divinations: {
+    async getTodayQuestion(userId: string): Promise<DivinationQuestionWithResponse | null> {
+      const today = new Date().toISOString().split('T')[0];
+      
+      const { data: schedule, error: scheduleError } = await supabase
+        .from('daily_divination_schedule')
+        .select('*, divination_questions(*)')
+        .eq('user_id', userId)
+        .eq('scheduled_date', today)
+        .maybeSingle();
+
+      if (scheduleError) throw scheduleError;
+      
+      if (!schedule) {
+        const randomQuestion = await this.getRandomQuestion();
+        if (!randomQuestion) return null;
+        
+        await this.scheduleQuestion(userId, randomQuestion.id, today);
+        return randomQuestion;
+      }
+
+      const question = schedule.divination_questions as unknown as DivinationQuestion;
+      
+      if (schedule.completed) {
+        const { data: response } = await supabase
+          .from('user_divination_responses')
+          .select('*')
+          .eq('user_id', userId)
+          .eq('question_id', question.id)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        return {
+          ...question,
+          user_response: response || undefined,
+        };
+      }
+
+      return question;
+    },
+
+    async getRandomQuestion(): Promise<DivinationQuestion | null> {
+      const { data, error } = await supabase
+        .from('divination_questions')
+        .select('*')
+        .eq('is_active', true)
+        .order('id', { ascending: true })
+        .limit(100);
+
+      if (error) throw error;
+      if (!data || data.length === 0) return null;
+
+      const randomIndex = Math.floor(Math.random() * data.length);
+      return data[randomIndex];
+    },
+
+    async scheduleQuestion(userId: string, questionId: string, date: string): Promise<void> {
+      const { error } = await supabase
+        .from('daily_divination_schedule')
+        .insert({
+          user_id: userId,
+          question_id: questionId,
+          scheduled_date: date,
+        });
+
+      if (error) throw error;
+    },
+
+    async submitResponse(
+      userId: string,
+      questionId: string,
+      responseText: string,
+      responseData: Record<string, unknown> = {}
+    ): Promise<UserDivinationResponse> {
+      const { data, error } = await supabase
+        .from('user_divination_responses')
+        .insert({
+          user_id: userId,
+          question_id: questionId,
+          response_text: responseText,
+          response_data: responseData,
+        })
+        .select()
+        .maybeSingle();
+
+      if (error) throw error;
+      if (!data) throw new Error('Failed to create response');
+
+      const today = new Date().toISOString().split('T')[0];
+      await supabase
+        .from('daily_divination_schedule')
+        .update({
+          completed: true,
+          completed_at: new Date().toISOString(),
+        })
+        .eq('user_id', userId)
+        .eq('question_id', questionId)
+        .eq('scheduled_date', today);
+
+      return data;
+    },
+
+    async getQuestionsByType(type: string): Promise<DivinationQuestion[]> {
+      const { data, error } = await supabase
+        .from('divination_questions')
+        .select('*')
+        .eq('question_type', type)
+        .eq('is_active', true)
+        .order('created_at', { ascending: false })
+        .limit(50);
+
+      if (error) throw error;
+      return Array.isArray(data) ? data : [];
+    },
+
+    async getUserResponses(userId: string, limit = 20): Promise<UserDivinationResponse[]> {
+      const { data, error } = await supabase
+        .from('user_divination_responses')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(limit);
+
+      if (error) throw error;
+      return Array.isArray(data) ? data : [];
+    },
+
+    async updateAIInsight(responseId: string, insight: string): Promise<void> {
+      const { error } = await supabase
+        .from('user_divination_responses')
+        .update({ ai_insight: insight })
+        .eq('id', responseId);
+
+      if (error) throw error;
+    },
+  },
+
+  gamification: {
+    async getUserStats(userId: string): Promise<UserStats | null> {
+      const { data, error } = await supabase
+        .from('user_stats')
+        .select('*')
+        .eq('user_id', userId)
+        .maybeSingle();
+
+      if (error) throw error;
+      
+      if (!data) {
+        const { data: newStats, error: createError } = await supabase
+          .from('user_stats')
+          .insert({ user_id: userId })
+          .select()
+          .maybeSingle();
+
+        if (createError) throw createError;
+        return newStats;
+      }
+
+      return data;
+    },
+
+    async awardCrystals(
+      userId: string,
+      amount: number,
+      source: string,
+      description: string
+    ): Promise<void> {
+      const { error } = await supabase.rpc('award_crystals', {
+        p_user_id: userId,
+        p_amount: amount,
+        p_source: source,
+        p_description: description,
+      });
+
+      if (error) throw error;
+    },
+
+    async updateXP(userId: string, xpAmount: number): Promise<void> {
+      const { error } = await supabase.rpc('update_xp', {
+        p_user_id: userId,
+        p_xp_amount: xpAmount,
+      });
+
+      if (error) throw error;
+    },
+
+    async updateStreak(userId: string): Promise<void> {
+      const { error } = await supabase.rpc('update_streak', {
+        p_user_id: userId,
+      });
+
+      if (error) throw error;
+    },
+
+    async getCrystalTransactions(userId: string, limit = 50): Promise<CrystalTransaction[]> {
+      const { data, error } = await supabase
+        .from('crystal_transactions')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(limit);
+
+      if (error) throw error;
+      return Array.isArray(data) ? data : [];
+    },
+
+    async getAllAchievements(): Promise<Achievement[]> {
+      const { data, error } = await supabase
+        .from('achievements')
+        .select('*')
+        .eq('is_active', true)
+        .order('category', { ascending: true })
+        .limit(100);
+
+      if (error) throw error;
+      return Array.isArray(data) ? data : [];
+    },
+
+    async getUserAchievements(userId: string): Promise<AchievementWithDetails[]> {
+      const { data, error } = await supabase
+        .from('user_achievements')
+        .select('*, achievements(*)')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(100);
+
+      if (error) throw error;
+      
+      return Array.isArray(data)
+        ? data.map((ua) => ({
+            ...ua,
+            achievement: ua.achievements as unknown as Achievement,
+          }))
+        : [];
+    },
+
+    async checkAndAwardAchievement(
+      userId: string,
+      achievementType: string,
+      currentValue: number
+    ): Promise<void> {
+      const achievements = await this.getAllAchievements();
+      const userAchievements = await this.getUserAchievements(userId);
+      const completedIds = new Set(
+        userAchievements.filter((ua) => ua.completed).map((ua) => ua.achievement_id)
+      );
+
+      for (const achievement of achievements) {
+        if (completedIds.has(achievement.id)) continue;
+
+        const criteria = achievement.criteria as { type: string; count?: number; days?: number };
+        if (criteria.type !== achievementType) continue;
+
+        const targetValue = criteria.count || criteria.days || 1;
+        if (currentValue >= targetValue) {
+          const { error: upsertError } = await supabase
+            .from('user_achievements')
+            .upsert({
+              user_id: userId,
+              achievement_id: achievement.id,
+              progress: currentValue,
+              completed: true,
+              completed_at: new Date().toISOString(),
+            });
+
+          if (upsertError) {
+            console.error('Error awarding achievement:', upsertError);
+            continue;
+          }
+
+          await this.awardCrystals(
+            userId,
+            achievement.crystal_reward,
+            'achievement',
+            `Achievement unlocked: ${achievement.name}`
+          );
+
+          await this.updateXP(userId, achievement.xp_reward);
+        } else {
+          await supabase.from('user_achievements').upsert({
+            user_id: userId,
+            achievement_id: achievement.id,
+            progress: currentValue,
+            completed: false,
+          });
+        }
+      }
+    },
+
+    async incrementStat(
+      userId: string,
+      statName: 'total_conversations' | 'total_assessments' | 'total_divinations'
+    ): Promise<void> {
+      const { error } = await supabase.rpc('increment', {
+        table_name: 'user_stats',
+        column_name: statName,
+        row_id: userId,
+      });
+
+      if (error) {
+        const { data: stats } = await supabase
+          .from('user_stats')
+          .select(statName)
+          .eq('user_id', userId)
+          .maybeSingle();
+
+        const currentValue = stats ? (stats[statName] as number) : 0;
+
+        await supabase
+          .from('user_stats')
+          .upsert({
+            user_id: userId,
+            [statName]: currentValue + 1,
+          });
+      }
     },
   },
 };

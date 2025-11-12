@@ -217,3 +217,90 @@ export interface VoiceSession {
   ended_at: string | null;
   created_at: string;
 }
+
+export interface DivinationQuestion {
+  id: string;
+  question_text: string;
+  question_type: 'daily_divination' | 'olfactory_quiz' | 'therapy_game' | 'truth_game';
+  category: string;
+  difficulty: 'easy' | 'medium' | 'hard';
+  options: unknown[];
+  metadata: Record<string, unknown>;
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface UserDivinationResponse {
+  id: string;
+  user_id: string;
+  question_id: string;
+  response_text: string | null;
+  response_data: Record<string, unknown>;
+  ai_insight: string | null;
+  created_at: string;
+}
+
+export interface DailyDivinationSchedule {
+  id: string;
+  user_id: string;
+  question_id: string;
+  scheduled_date: string;
+  completed: boolean;
+  completed_at: string | null;
+  created_at: string;
+}
+
+export interface DivinationQuestionWithResponse extends DivinationQuestion {
+  user_response?: UserDivinationResponse;
+}
+
+export interface UserStats {
+  user_id: string;
+  crystals: number;
+  xp: number;
+  level: number;
+  streak_days: number;
+  last_active_date: string | null;
+  total_conversations: number;
+  total_assessments: number;
+  total_divinations: number;
+  updated_at: string;
+}
+
+export interface CrystalTransaction {
+  id: string;
+  user_id: string;
+  amount: number;
+  transaction_type: 'earn' | 'spend' | 'bonus' | 'penalty';
+  source: string;
+  description: string;
+  metadata: Record<string, unknown>;
+  created_at: string;
+}
+
+export interface Achievement {
+  id: string;
+  name: string;
+  description: string;
+  category: 'engagement' | 'exploration' | 'growth' | 'social';
+  icon: string;
+  crystal_reward: number;
+  xp_reward: number;
+  criteria: Record<string, unknown>;
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface UserAchievement {
+  id: string;
+  user_id: string;
+  achievement_id: string;
+  progress: number;
+  completed: boolean;
+  completed_at: string | null;
+  created_at: string;
+}
+
+export interface AchievementWithDetails extends UserAchievement {
+  achievement: Achievement;
+}

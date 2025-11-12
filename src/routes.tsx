@@ -11,6 +11,8 @@ import Wellness from './pages/Wellness';
 import Community from './pages/Community';
 import CoupleChallenge from './pages/CoupleChallenge';
 import Profile from './pages/Profile';
+import Divinations from './pages/Divinations';
+import Gamification from './pages/Gamification';
 
 interface RouteConfig {
   name: string;
@@ -48,6 +50,18 @@ const routes: RouteConfig[] = [
     name: 'Balance Wheel',
     path: '/balance-wheel',
     element: <BalanceWheel />,
+    visible: true,
+  },
+  {
+    name: 'Divinations',
+    path: '/divinations',
+    element: <Divinations />,
+    visible: true,
+  },
+  {
+    name: 'Progress',
+    path: '/progress',
+    element: <Gamification />,
     visible: true,
   },
   {
