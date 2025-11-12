@@ -1,10 +1,13 @@
 import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import { Shield } from "lucide-react";
 import routes from "../../routes";
 
 const Header: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const location = useLocation();
+  const { profile } = useAuth();
   const navigation = routes.filter((route) => route.visible !== false);
 
   return (
@@ -41,6 +44,19 @@ const Header: React.FC = () => {
                 {item.name}
               </Link>
             ))}
+            {profile?.role === 'admin' && (
+              <Link
+                to="/admin"
+                className={`px-3 py-2 text-base font-medium rounded-md flex items-center gap-2 ${
+                  location.pathname.startsWith('/admin')
+                    ? "text-blue-600 bg-blue-50"
+                    : "text-gray-700 hover:text-blue-600 hover:bg-gray-50"
+                } transition duration-300`}
+              >
+                <Shield className="w-4 h-4" />
+                Admin
+              </Link>
+            )}
           </div>
         </div>
       </nav>

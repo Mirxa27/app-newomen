@@ -67,8 +67,10 @@ export default function DailyDivination() {
           user_id: user.id,
           memory_text: `Daily Divination Response - ${question.question_text}: ${response.trim()}`,
           memory_type: 'confession',
-          importance_score: 0.7,
+          importance_score: 7,
           source_conversation_id: null,
+          emotion_tags: [],
+          memory_themes: ['divination', 'self-reflection'],
         });
 
         if (memory) {

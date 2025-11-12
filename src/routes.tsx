@@ -13,6 +13,15 @@ import CoupleChallenge from './pages/CoupleChallenge';
 import Profile from './pages/Profile';
 import Divinations from './pages/Divinations';
 import Gamification from './pages/Gamification';
+import Subscription from './pages/Subscription';
+import ShadowWork from './pages/ShadowWork';
+import ShadowWorkJourney from './pages/ShadowWorkJourney';
+import AdminDashboard from './pages/admin/AdminDashboard';
+import UserManagement from './pages/admin/UserManagement';
+import AssessmentManagement from './pages/admin/AssessmentManagement';
+import DivinationManagement from './pages/admin/DivinationManagement';
+import SubscriptionManagement from './pages/admin/SubscriptionManagement';
+import Analytics from './pages/admin/Analytics';
 
 interface RouteConfig {
   name: string;
@@ -105,6 +114,60 @@ const routes: RouteConfig[] = [
     path: '/profile',
     element: <Profile />,
     visible: true,
+  },
+  {
+    name: 'Subscription',
+    path: '/subscription',
+    element: <Subscription />,
+    visible: true,
+  },
+  {
+    name: 'Shadow Work',
+    path: '/shadow-work',
+    element: <ShadowWork />,
+    visible: true,
+  },
+  {
+    name: 'Shadow Work Journey',
+    path: '/shadow-work/:id',
+    element: <ShadowWorkJourney />,
+    visible: false,
+  },
+  {
+    name: 'Admin Dashboard',
+    path: '/admin',
+    element: <AdminDashboard />,
+    visible: false,
+  },
+  {
+    name: 'User Management',
+    path: '/admin/users',
+    element: <UserManagement />,
+    visible: false,
+  },
+  {
+    name: 'Assessment Management',
+    path: '/admin/assessments',
+    element: <AssessmentManagement />,
+    visible: false,
+  },
+  {
+    name: 'Divination Management',
+    path: '/admin/divinations',
+    element: <DivinationManagement />,
+    visible: false,
+  },
+  {
+    name: 'Subscription Management',
+    path: '/admin/subscriptions',
+    element: <SubscriptionManagement />,
+    visible: false,
+  },
+  {
+    name: 'Analytics',
+    path: '/admin/analytics',
+    element: <Analytics />,
+    visible: false,
   },
 ];
 

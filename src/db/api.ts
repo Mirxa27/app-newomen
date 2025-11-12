@@ -29,6 +29,14 @@ import type {
   Achievement,
   UserAchievement,
   AchievementWithDetails,
+  MemoryPattern,
+  MemoryCluster,
+  SubscriptionHistory,
+  SubscriptionTier,
+  SubscriptionStatus,
+  ShadowWorkJourney,
+  ShadowWorkResponse,
+  ShadowJourneyType,
 } from '@/types/types';
 
 export const db = {
@@ -81,6 +89,16 @@ export const db = {
         .select('*')
         .order('created_at', { ascending: false })
         .range(page * pageSize, (page + 1) * pageSize - 1);
+      
+      if (error) throw error;
+      return Array.isArray(data) ? data : [];
+    },
+
+    async listAll(): Promise<Profile[]> {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .order('created_at', { ascending: false });
       
       if (error) throw error;
       return Array.isArray(data) ? data : [];
@@ -144,10 +162,15 @@ export const db = {
       return Array.isArray(data) ? data : [];
     },
 
-    async create(memory: Omit<NewMeMemory, 'id' | 'created_at'>): Promise<NewMeMemory> {
+    async create(memory: Omit<NewMeMemory, 'id' | 'created_at' | 'recall_count' | 'last_recalled_at'>): Promise<NewMeMemory> {
       const { data, error } = await supabase
         .from('newme_memories')
-        .insert(memory)
+        .insert({
+          ...memory,
+          recall_count: 0,
+          emotion_tags: memory.emotion_tags || [],
+          memory_themes: memory.memory_themes || [],
+        })
         .select()
         .maybeSingle();
       
@@ -164,6 +187,38 @@ export const db = {
         .gte('importance_score', 7)
         .order('importance_score', { ascending: false })
         .limit(limit);
+      
+      if (error) throw error;
+      return Array.isArray(data) ? data : [];
+    },
+
+    async incrementRecall(memoryId: string): Promise<void> {
+      const { error } = await supabase.rpc('increment_memory_recall', {
+        memory_id: memoryId,
+      });
+      
+      if (error) throw error;
+    },
+
+    async searchByEmotion(userId: string, emotion: string): Promise<NewMeMemory[]> {
+      const { data, error } = await supabase
+        .from('newme_memories')
+        .select('*')
+        .eq('user_id', userId)
+        .contains('emotion_tags', [emotion])
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      return Array.isArray(data) ? data : [];
+    },
+
+    async searchByTheme(userId: string, theme: string): Promise<NewMeMemory[]> {
+      const { data, error } = await supabase
+        .from('newme_memories')
+        .select('*')
+        .eq('user_id', userId)
+        .contains('memory_themes', [theme])
+        .order('created_at', { ascending: false});
       
       if (error) throw error;
       return Array.isArray(data) ? data : [];
@@ -278,6 +333,16 @@ export const db = {
         .from('user_assessments')
         .select('*')
         .eq('user_id', userId)
+        .order('completed_at', { ascending: false });
+      
+      if (error) throw error;
+      return Array.isArray(data) ? data : [];
+    },
+
+    async listAll(): Promise<UserAssessment[]> {
+      const { data, error } = await supabase
+        .from('user_assessments')
+        .select('*')
         .order('completed_at', { ascending: false });
       
       if (error) throw error;
@@ -995,6 +1060,55 @@ export const db = {
 
       if (error) throw error;
     },
+
+    async listQuestions(): Promise<DivinationQuestion[]> {
+      const { data, error } = await supabase
+        .from('divination_questions')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return Array.isArray(data) ? data : [];
+    },
+
+    async createQuestion(question: { question: string; description?: string }): Promise<DivinationQuestion> {
+      const { data, error } = await supabase
+        .from('divination_questions')
+        .insert({
+          question: question.question,
+          description: question.description || null,
+          question_type: 'general',
+          is_active: true,
+        })
+        .select()
+        .maybeSingle();
+
+      if (error) throw error;
+      if (!data) throw new Error('Failed to create question');
+      return data;
+    },
+
+    async updateQuestion(id: string, updates: { question?: string; description?: string }): Promise<DivinationQuestion> {
+      const { data, error } = await supabase
+        .from('divination_questions')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .maybeSingle();
+
+      if (error) throw error;
+      if (!data) throw new Error('Question not found');
+      return data;
+    },
+
+    async deleteQuestion(id: string): Promise<void> {
+      const { error } = await supabase
+        .from('divination_questions')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+    },
   },
 
   gamification: {
@@ -1282,6 +1396,242 @@ export const db = {
       if (error) {
         console.error('Error updating personality analysis:', error);
       }
+    },
+  },
+
+  memoryPatterns: {
+    async list(userId: string): Promise<MemoryPattern[]> {
+      const { data, error } = await supabase
+        .from('memory_patterns')
+        .select('*')
+        .eq('user_id', userId)
+        .order('confidence_score', { ascending: false })
+        .order('frequency', { ascending: false });
+      
+      if (error) throw error;
+      return Array.isArray(data) ? data : [];
+    },
+
+    async detectPatterns(userId: string): Promise<void> {
+      const { error } = await supabase.rpc('detect_memory_patterns', {
+        p_user_id: userId,
+      });
+      
+      if (error) throw error;
+    },
+
+    async getByType(userId: string, patternType: string): Promise<MemoryPattern[]> {
+      const { data, error } = await supabase
+        .from('memory_patterns')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('pattern_type', patternType)
+        .order('confidence_score', { ascending: false });
+      
+      if (error) throw error;
+      return Array.isArray(data) ? data : [];
+    },
+  },
+
+  memoryClusters: {
+    async list(userId: string): Promise<MemoryCluster[]> {
+      const { data, error } = await supabase
+        .from('memory_clusters')
+        .select('*')
+        .eq('user_id', userId)
+        .order('time_period_end', { ascending: false });
+      
+      if (error) throw error;
+      return Array.isArray(data) ? data : [];
+    },
+
+    async createClusters(userId: string): Promise<void> {
+      const { error } = await supabase.rpc('create_memory_clusters', {
+        p_user_id: userId,
+      });
+      
+      if (error) throw error;
+    },
+
+    async getByTheme(userId: string, theme: string): Promise<MemoryCluster | null> {
+      const { data, error } = await supabase
+        .from('memory_clusters')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('cluster_theme', theme)
+        .maybeSingle();
+      
+      if (error) throw error;
+      return data;
+    },
+  },
+
+  subscriptions: {
+    async getHistory(userId: string): Promise<SubscriptionHistory[]> {
+      const { data, error } = await supabase
+        .from('subscription_history')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      return Array.isArray(data) ? data : [];
+    },
+
+    async updateSubscription(
+      userId: string,
+      tier: SubscriptionTier,
+      status: SubscriptionStatus,
+      endDate?: string
+    ): Promise<void> {
+      const updates: Record<string, unknown> = {
+        subscription_tier: tier,
+        subscription_status: status,
+      };
+
+      if (endDate) {
+        updates.subscription_end_date = endDate;
+      }
+
+      if (status === 'trial') {
+        const trialEnd = new Date();
+        trialEnd.setDate(trialEnd.getDate() + 7);
+        updates.trial_end_date = trialEnd.toISOString();
+      }
+
+      const { error } = await supabase
+        .from('profiles')
+        .update(updates)
+        .eq('id', userId);
+
+      if (error) throw error;
+    },
+
+    async hasAccess(userId: string, requiredTier: SubscriptionTier): Promise<boolean> {
+      const { data, error } = await supabase.rpc('has_active_subscription', {
+        uid: userId,
+        required_tier: requiredTier,
+      });
+
+      if (error) throw error;
+      return data || false;
+    },
+
+    async startTrial(userId: string, tier: SubscriptionTier): Promise<void> {
+      const trialEnd = new Date();
+      trialEnd.setDate(trialEnd.getDate() + 7);
+
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          subscription_tier: tier,
+          subscription_status: 'trial',
+          trial_end_date: trialEnd.toISOString(),
+          subscription_start_date: new Date().toISOString(),
+        })
+        .eq('id', userId);
+
+      if (error) throw error;
+    },
+
+    async cancelSubscription(userId: string): Promise<void> {
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          subscription_status: 'canceled',
+        })
+        .eq('id', userId);
+
+      if (error) throw error;
+    },
+  },
+
+  shadowWork: {
+    async listJourneys(userId: string): Promise<ShadowWorkJourney[]> {
+      const { data, error } = await supabase
+        .from('shadow_work_journeys')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return Array.isArray(data) ? data : [];
+    },
+
+    async getJourney(journeyId: string): Promise<ShadowWorkJourney | null> {
+      const { data, error } = await supabase
+        .from('shadow_work_journeys')
+        .select('*')
+        .eq('id', journeyId)
+        .maybeSingle();
+
+      if (error) throw error;
+      return data;
+    },
+
+    async createJourney(userId: string, journeyType: ShadowJourneyType): Promise<ShadowWorkJourney> {
+      const { data, error } = await supabase
+        .from('shadow_work_journeys')
+        .insert({
+          user_id: userId,
+          journey_type: journeyType,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+
+    async getResponses(journeyId: string): Promise<ShadowWorkResponse[]> {
+      const { data, error } = await supabase
+        .from('shadow_work_responses')
+        .select('*')
+        .eq('journey_id', journeyId)
+        .order('question_number', { ascending: true });
+
+      if (error) throw error;
+      return Array.isArray(data) ? data : [];
+    },
+
+    async saveResponse(
+      journeyId: string,
+      userId: string,
+      questionNumber: number,
+      questionText: string,
+      responseText: string,
+      reflectionNotes?: string,
+      emotionTags?: string[]
+    ): Promise<void> {
+      const { error } = await supabase
+        .from('shadow_work_responses')
+        .upsert({
+          journey_id: journeyId,
+          user_id: userId,
+          question_number: questionNumber,
+          question_text: questionText,
+          response_text: responseText,
+          reflection_notes: reflectionNotes,
+          emotion_tags: emotionTags || [],
+        });
+
+      if (error) throw error;
+    },
+
+    async advanceQuestion(journeyId: string): Promise<void> {
+      const { error } = await supabase.rpc('advance_shadow_question', {
+        p_journey_id: journeyId,
+      });
+
+      if (error) throw error;
+    },
+
+    async completeJourney(journeyId: string): Promise<void> {
+      const { error } = await supabase.rpc('complete_shadow_journey', {
+        p_journey_id: journeyId,
+      });
+
+      if (error) throw error;
     },
   },
 };

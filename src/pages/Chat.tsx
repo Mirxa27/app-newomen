@@ -150,6 +150,8 @@ export default function Chat() {
           memory_type: 'fact',
           importance_score: Math.floor(Math.random() * 5) + 5,
           source_conversation_id: userConv.id,
+          emotion_tags: [],
+          memory_themes: ['conversation'],
         });
       }
     } catch (error) {

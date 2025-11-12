@@ -1,4 +1,6 @@
 export type UserRole = 'user' | 'admin';
+export type SubscriptionTier = 'free' | 'discovery' | 'growth' | 'transformation';
+export type SubscriptionStatus = 'active' | 'trial' | 'canceled' | 'expired';
 
 export interface Profile {
   id: string;
@@ -16,6 +18,11 @@ export interface Profile {
   personality_traits: Record<string, unknown>;
   balance_wheel_data: Record<string, unknown>;
   onboarding_completed: boolean;
+  subscription_tier: SubscriptionTier;
+  subscription_status: SubscriptionStatus;
+  subscription_start_date: string | null;
+  subscription_end_date: string | null;
+  trial_end_date: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -37,6 +44,10 @@ export interface NewMeMemory {
   memory_type: 'fact' | 'emotion' | 'pattern' | 'confession';
   importance_score: number;
   source_conversation_id: string | null;
+  emotion_tags: string[];
+  memory_themes: string[];
+  recall_count: number;
+  last_recalled_at: string | null;
   created_at: string;
 }
 
@@ -388,3 +399,68 @@ export interface CommunicationAnalysis {
   punctuation_style: string | null;
   created_at: string;
 }
+
+export interface MemoryPattern {
+  id: string;
+  user_id: string;
+  pattern_type: 'recurring_theme' | 'emotional_pattern' | 'temporal_pattern';
+  pattern_name: string;
+  description: string | null;
+  related_memory_ids: string[];
+  frequency: number;
+  first_detected_at: string;
+  last_detected_at: string;
+  confidence_score: number;
+  created_at: string;
+}
+
+export interface MemoryCluster {
+  id: string;
+  user_id: string;
+  cluster_name: string;
+  cluster_theme: string;
+  memory_ids: string[];
+  time_period_start: string | null;
+  time_period_end: string | null;
+  dominant_emotion: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SubscriptionHistory {
+  id: string;
+  user_id: string;
+  previous_tier: SubscriptionTier | null;
+  new_tier: SubscriptionTier;
+  previous_status: SubscriptionStatus | null;
+  new_status: SubscriptionStatus;
+  change_reason: string | null;
+  changed_by: string | null;
+  created_at: string;
+}
+
+export type ShadowJourneyType = 'inner_child' | 'shadow_self' | 'limiting_beliefs' | 'emotional_wounds';
+
+export interface ShadowWorkJourney {
+  id: string;
+  user_id: string;
+  journey_type: ShadowJourneyType;
+  current_question: number;
+  is_completed: boolean;
+  started_at: string;
+  completed_at: string | null;
+  created_at: string;
+}
+
+export interface ShadowWorkResponse {
+  id: string;
+  journey_id: string;
+  user_id: string;
+  question_number: number;
+  question_text: string;
+  response_text: string;
+  reflection_notes: string | null;
+  emotion_tags: string[];
+  created_at: string;
+}
+
