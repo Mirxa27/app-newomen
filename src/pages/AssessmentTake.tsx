@@ -64,6 +64,15 @@ export default function AssessmentTake() {
 
       setAssessment(data);
       
+      // Track assessment start (Newme Brain)
+      if (profile) {
+        db.newmeBrain.trackBehavior(profile.id, 'assessment_started', {
+          assessment_id: data.id,
+          assessment_category: data.category,
+          assessment_title: data.title,
+        });
+      }
+      
       const assessmentQuestions = data.questions as Question[];
       if (assessmentQuestions && assessmentQuestions.length > 0) {
         setQuestions(assessmentQuestions);
@@ -379,8 +388,15 @@ export default function AssessmentTake() {
       );
 
       if (functionError) {
-        console.error('Edge Function error:', functionError);
+        const errorMsg = await functionError?.context?.text();
+        console.error('Edge Function error:', errorMsg || functionError);
         toast.error('Failed to generate insights. Please try again.');
+        return;
+      }
+
+      if (!functionData?.success) {
+        console.error('Edge Function returned error:', functionData);
+        toast.error(functionData?.error || 'Failed to generate insights. Please try again.');
         return;
       }
 

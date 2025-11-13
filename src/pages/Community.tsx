@@ -19,7 +19,12 @@ export default function Community() {
 
   useEffect(() => {
     loadPosts();
-  }, []);
+    
+    // Track community page visit (Newme Brain)
+    if (profile) {
+      db.newmeBrain.trackBehavior(profile.id, 'community_visit', {});
+    }
+  }, [profile]);
 
   const loadPosts = async () => {
     try {
@@ -45,6 +50,12 @@ export default function Community() {
         images: [],
         poll_options: [],
         poll_votes: {},
+      });
+
+      // Track post creation (Newme Brain)
+      db.newmeBrain.trackBehavior(profile.id, 'community_post_created', {
+        post_id: post.id,
+        content_length: newPost.trim().length,
       });
 
       const postWithProfile = await db.communityPosts.getById(post.id);

@@ -25,6 +25,11 @@ export default function Wellness() {
 
   useEffect(() => {
     loadResources();
+    
+    // Track wellness page visit (Newme Brain)
+    if (profile) {
+      db.newmeBrain.trackBehavior(profile.id, 'wellness_visit', {});
+    }
   }, [profile]);
 
   const loadResources = async () => {
@@ -57,6 +62,19 @@ export default function Wellness() {
       console.error('Error toggling favorite:', error);
       toast.error('Failed to update favorite');
     }
+  };
+
+  const handlePlayResource = (resource: WellnessResourceWithFavorite) => {
+    // Track resource play (Newme Brain)
+    if (profile) {
+      db.newmeBrain.trackBehavior(profile.id, 'wellness_resource_played', {
+        resource_id: resource.id,
+        resource_category: resource.category,
+        resource_type: resource.resource_type,
+      });
+    }
+    
+    window.open(resource.resource_url, '_blank');
   };
 
   const filteredResources = resources.filter((resource) => {
@@ -147,7 +165,7 @@ export default function Wellness() {
                       <Button
                         variant="default"
                         className="flex-1 cosmic-gradient"
-                        onClick={() => window.open(resource.resource_url, '_blank')}
+                        onClick={() => handlePlayResource(resource)}
                       >
                         <Play className="w-4 h-4 mr-2" />
                         {resource.resource_type === 'youtube' ? 'Watch' : 'Listen'}
