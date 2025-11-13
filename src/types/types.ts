@@ -573,3 +573,108 @@ export interface BehaviorWithModel extends AiBehavior {
   model: AiModel | null;
 }
 
+// AI Management System Types
+export interface AiProvider {
+  id: string;
+  name: string;
+  api_base_url: string;
+  requires_api_key: boolean;
+  is_active: boolean;
+  config: Record<string, unknown>;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AiModelConfig {
+  id: string;
+  provider_id: string;
+  model_id: string;
+  display_name: string;
+  capabilities: string[];
+  context_window: number;
+  is_active: boolean;
+  config: Record<string, unknown>;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AiFunction {
+  id: string;
+  function_key: string;
+  display_name: string;
+  description: string | null;
+  category: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AiFunctionConfig {
+  id: string;
+  function_id: string;
+  provider_id: string;
+  model_id: string;
+  system_prompt: string;
+  temperature: number;
+  max_tokens: number;
+  additional_config: Record<string, unknown>;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AiInteractionLog {
+  id: string;
+  function_id: string | null;
+  user_id: string | null;
+  provider_id: string | null;
+  model_id: string | null;
+  input_text: string | null;
+  output_text: string | null;
+  tokens_used: number | null;
+  response_time_ms: number | null;
+  status: string;
+  error_message: string | null;
+  metadata: Record<string, unknown>;
+  created_at: string;
+}
+
+export interface SupervisorReport {
+  id: string;
+  analyzed_interaction_id: string;
+  function_id: string | null;
+  analysis_type: string;
+  severity: 'low' | 'medium' | 'high' | 'critical';
+  findings: string;
+  suggestions: string | null;
+  metrics: Record<string, unknown>;
+  reviewed_by: string | null;
+  status: 'pending' | 'reviewed' | 'resolved' | 'dismissed';
+  created_at: string;
+  reviewed_at: string | null;
+}
+
+// Extended types with relations
+export interface AiModelWithProvider extends AiModelConfig {
+  provider: AiProvider;
+}
+
+export interface AiFunctionConfigWithRelations extends AiFunctionConfig {
+  function: AiFunction;
+  provider: AiProvider;
+  model: AiModelConfig;
+}
+
+export interface AiInteractionLogWithRelations extends AiInteractionLog {
+  function: AiFunction | null;
+  provider: AiProvider | null;
+  model: AiModelConfig | null;
+  user: Profile | null;
+}
+
+export interface SupervisorReportWithRelations extends SupervisorReport {
+  interaction: AiInteractionLog;
+  function: AiFunction | null;
+  reviewed_by_profile: Profile | null;
+}
+

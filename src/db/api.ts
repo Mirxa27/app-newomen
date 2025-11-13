@@ -46,6 +46,16 @@ import type {
   ModelWithProvider,
   VoiceWithProvider,
   BehaviorWithModel,
+  AiProvider,
+  AiModelConfig,
+  AiFunction,
+  AiFunctionConfig,
+  AiInteractionLog,
+  SupervisorReport,
+  AiModelWithProvider,
+  AiFunctionConfigWithRelations,
+  AiInteractionLogWithRelations,
+  SupervisorReportWithRelations,
 } from '@/types/types';
 
 export const db = {
@@ -2060,6 +2070,544 @@ export const db = {
       });
 
       if (error) throw error;
+    },
+  },
+
+  // AI Management System
+  aiMgmtProviders: {
+    async list(): Promise<AiProvider[]> {
+      const { data, error } = await supabase
+        .from('ai_providers')
+        .select('*')
+        .order('name', { ascending: true });
+
+      if (error) throw error;
+      return Array.isArray(data) ? data : [];
+    },
+
+    async getById(id: string): Promise<AiProvider | null> {
+      const { data, error } = await supabase
+        .from('ai_providers')
+        .select('*')
+        .eq('id', id)
+        .maybeSingle();
+
+      if (error) throw error;
+      return data;
+    },
+
+    async create(provider: Omit<AiProvider, 'id' | 'created_at' | 'updated_at'>): Promise<AiProvider> {
+      const { data, error } = await supabase
+        .from('ai_providers')
+        .insert(provider)
+        .select()
+        .maybeSingle();
+
+      if (error) throw error;
+      if (!data) throw new Error('Failed to create AI provider');
+      return data;
+    },
+
+    async update(id: string, updates: Partial<AiProvider>): Promise<AiProvider> {
+      const { data, error } = await supabase
+        .from('ai_providers')
+        .update({ ...updates, updated_at: new Date().toISOString() })
+        .eq('id', id)
+        .select()
+        .maybeSingle();
+
+      if (error) throw error;
+      if (!data) throw new Error('Failed to update AI provider');
+      return data;
+    },
+
+    async delete(id: string): Promise<void> {
+      const { error } = await supabase
+        .from('ai_providers')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+    },
+  },
+
+  aiMgmtModels: {
+    async list(): Promise<AiModelWithProvider[]> {
+      const { data, error } = await supabase
+        .from('ai_mgmt_models')
+        .select('*, provider:ai_providers(*)')
+        .order('display_name', { ascending: true });
+
+      if (error) throw error;
+      return Array.isArray(data) ? data : [];
+    },
+
+    async listByProvider(providerId: string): Promise<AiModelConfig[]> {
+      const { data, error } = await supabase
+        .from('ai_mgmt_models')
+        .select('*')
+        .eq('provider_id', providerId)
+        .order('display_name', { ascending: true });
+
+      if (error) throw error;
+      return Array.isArray(data) ? data : [];
+    },
+
+    async getById(id: string): Promise<AiModelConfig | null> {
+      const { data, error } = await supabase
+        .from('ai_mgmt_models')
+        .select('*')
+        .eq('id', id)
+        .maybeSingle();
+
+      if (error) throw error;
+      return data;
+    },
+
+    async create(model: Omit<AiModelConfig, 'id' | 'created_at' | 'updated_at'>): Promise<AiModelConfig> {
+      const { data, error } = await supabase
+        .from('ai_mgmt_models')
+        .insert(model)
+        .select()
+        .maybeSingle();
+
+      if (error) throw error;
+      if (!data) throw new Error('Failed to create AI model');
+      return data;
+    },
+
+    async update(id: string, updates: Partial<AiModelConfig>): Promise<AiModelConfig> {
+      const { data, error } = await supabase
+        .from('ai_mgmt_models')
+        .update({ ...updates, updated_at: new Date().toISOString() })
+        .eq('id', id)
+        .select()
+        .maybeSingle();
+
+      if (error) throw error;
+      if (!data) throw new Error('Failed to update AI model');
+      return data;
+    },
+
+    async delete(id: string): Promise<void> {
+      const { error } = await supabase
+        .from('ai_mgmt_models')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+    },
+  },
+
+  aiMgmtFunctions: {
+    async list(): Promise<AiFunction[]> {
+      const { data, error } = await supabase
+        .from('ai_mgmt_functions')
+        .select('*')
+        .order('display_name', { ascending: true });
+
+      if (error) throw error;
+      return Array.isArray(data) ? data : [];
+    },
+
+    async getById(id: string): Promise<AiFunction | null> {
+      const { data, error } = await supabase
+        .from('ai_mgmt_functions')
+        .select('*')
+        .eq('id', id)
+        .maybeSingle();
+
+      if (error) throw error;
+      return data;
+    },
+
+    async getByKey(functionKey: string): Promise<AiFunction | null> {
+      const { data, error } = await supabase
+        .from('ai_mgmt_functions')
+        .select('*')
+        .eq('function_key', functionKey)
+        .maybeSingle();
+
+      if (error) throw error;
+      return data;
+    },
+
+    async create(func: Omit<AiFunction, 'id' | 'created_at' | 'updated_at'>): Promise<AiFunction> {
+      const { data, error } = await supabase
+        .from('ai_mgmt_functions')
+        .insert(func)
+        .select()
+        .maybeSingle();
+
+      if (error) throw error;
+      if (!data) throw new Error('Failed to create AI function');
+      return data;
+    },
+
+    async update(id: string, updates: Partial<AiFunction>): Promise<AiFunction> {
+      const { data, error } = await supabase
+        .from('ai_mgmt_functions')
+        .update({ ...updates, updated_at: new Date().toISOString() })
+        .eq('id', id)
+        .select()
+        .maybeSingle();
+
+      if (error) throw error;
+      if (!data) throw new Error('Failed to update AI function');
+      return data;
+    },
+
+    async delete(id: string): Promise<void> {
+      const { error } = await supabase
+        .from('ai_mgmt_functions')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+    },
+  },
+
+  aiMgmtFunctionConfigs: {
+    async list(): Promise<AiFunctionConfigWithRelations[]> {
+      const { data, error } = await supabase
+        .from('ai_mgmt_function_configs')
+        .select(`
+          *,
+          function:ai_functions(*),
+          provider:ai_providers(*),
+          model:ai_models(*)
+        `)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return Array.isArray(data) ? data : [];
+    },
+
+    async listByFunction(functionId: string): Promise<AiFunctionConfigWithRelations[]> {
+      const { data, error } = await supabase
+        .from('ai_mgmt_function_configs')
+        .select(`
+          *,
+          function:ai_functions(*),
+          provider:ai_providers(*),
+          model:ai_models(*)
+        `)
+        .eq('function_id', functionId)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return Array.isArray(data) ? data : [];
+    },
+
+    async getActiveConfig(functionKey: string): Promise<AiFunctionConfigWithRelations | null> {
+      const { data, error } = await supabase
+        .from('ai_mgmt_function_configs')
+        .select(`
+          *,
+          function:ai_functions!inner(*),
+          provider:ai_providers(*),
+          model:ai_models(*)
+        `)
+        .eq('function:ai_functions.function_key', functionKey)
+        .eq('is_active', true)
+        .order('updated_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (error) throw error;
+      return data;
+    },
+
+    async getById(id: string): Promise<AiFunctionConfig | null> {
+      const { data, error } = await supabase
+        .from('ai_mgmt_function_configs')
+        .select('*')
+        .eq('id', id)
+        .maybeSingle();
+
+      if (error) throw error;
+      return data;
+    },
+
+    async create(config: Omit<AiFunctionConfig, 'id' | 'created_at' | 'updated_at'>): Promise<AiFunctionConfig> {
+      const { data, error } = await supabase
+        .from('ai_mgmt_function_configs')
+        .insert(config)
+        .select()
+        .maybeSingle();
+
+      if (error) throw error;
+      if (!data) throw new Error('Failed to create AI function config');
+      return data;
+    },
+
+    async update(id: string, updates: Partial<AiFunctionConfig>): Promise<AiFunctionConfig> {
+      const { data, error } = await supabase
+        .from('ai_mgmt_function_configs')
+        .update({ ...updates, updated_at: new Date().toISOString() })
+        .eq('id', id)
+        .select()
+        .maybeSingle();
+
+      if (error) throw error;
+      if (!data) throw new Error('Failed to update AI function config');
+      return data;
+    },
+
+    async delete(id: string): Promise<void> {
+      const { error } = await supabase
+        .from('ai_mgmt_function_configs')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+    },
+
+    async setActive(id: string, functionId: string): Promise<void> {
+      // Deactivate all configs for this function
+      await supabase
+        .from('ai_mgmt_function_configs')
+        .update({ is_active: false })
+        .eq('function_id', functionId);
+
+      // Activate the selected config
+      const { error } = await supabase
+        .from('ai_mgmt_function_configs')
+        .update({ is_active: true, updated_at: new Date().toISOString() })
+        .eq('id', id);
+
+      if (error) throw error;
+    },
+  },
+
+  aiMgmtInteractionLogs: {
+    async list(limit = 100, offset = 0): Promise<AiInteractionLogWithRelations[]> {
+      const { data, error } = await supabase
+        .from('ai_mgmt_interaction_logs')
+        .select(`
+          *,
+          function:ai_functions(*),
+          provider:ai_providers(*),
+          model:ai_models(*),
+          user:profiles(id, nickname, email)
+        `)
+        .order('created_at', { ascending: false })
+        .range(offset, offset + limit - 1);
+
+      if (error) throw error;
+      return Array.isArray(data) ? data : [];
+    },
+
+    async listByFunction(functionId: string, limit = 50): Promise<AiInteractionLog[]> {
+      const { data, error } = await supabase
+        .from('ai_mgmt_interaction_logs')
+        .select('*')
+        .eq('function_id', functionId)
+        .order('created_at', { ascending: false })
+        .limit(limit);
+
+      if (error) throw error;
+      return Array.isArray(data) ? data : [];
+    },
+
+    async listByUser(userId: string, limit = 50): Promise<AiInteractionLog[]> {
+      const { data, error } = await supabase
+        .from('ai_mgmt_interaction_logs')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(limit);
+
+      if (error) throw error;
+      return Array.isArray(data) ? data : [];
+    },
+
+    async create(log: Omit<AiInteractionLog, 'id' | 'created_at'>): Promise<AiInteractionLog> {
+      const { data, error } = await supabase
+        .from('ai_mgmt_interaction_logs')
+        .insert(log)
+        .select()
+        .maybeSingle();
+
+      if (error) throw error;
+      if (!data) throw new Error('Failed to create interaction log');
+      return data;
+    },
+
+    async getStats(functionId?: string): Promise<{
+      total: number;
+      success: number;
+      error: number;
+      avgResponseTime: number;
+      totalTokens: number;
+    }> {
+      let query = supabase.from('ai_mgmt_interaction_logs').select('*');
+      
+      if (functionId) {
+        query = query.eq('function_id', functionId);
+      }
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+
+      const logs = Array.isArray(data) ? data : [];
+      const total = logs.length;
+      const success = logs.filter(l => l.status === 'success').length;
+      const errorCount = logs.filter(l => l.status === 'error').length;
+      const avgResponseTime = logs.reduce((sum, l) => sum + (l.response_time_ms || 0), 0) / (total || 1);
+      const totalTokens = logs.reduce((sum, l) => sum + (l.tokens_used || 0), 0);
+
+      return {
+        total,
+        success,
+        error: errorCount,
+        avgResponseTime: Math.round(avgResponseTime),
+        totalTokens,
+      };
+    },
+  },
+
+  aiMgmtSupervisorReports: {
+    async list(limit = 50, offset = 0): Promise<SupervisorReportWithRelations[]> {
+      const { data, error } = await supabase
+        .from('ai_mgmt_supervisor_reports')
+        .select(`
+          *,
+          interaction:ai_interaction_logs(*),
+          function:ai_functions(*),
+          reviewed_by_profile:profiles(id, nickname, email)
+        `)
+        .order('created_at', { ascending: false })
+        .range(offset, offset + limit - 1);
+
+      if (error) throw error;
+      return Array.isArray(data) ? data : [];
+    },
+
+    async listByStatus(status: string, limit = 50): Promise<SupervisorReport[]> {
+      const { data, error } = await supabase
+        .from('ai_mgmt_supervisor_reports')
+        .select('*')
+        .eq('status', status)
+        .order('created_at', { ascending: false })
+        .limit(limit);
+
+      if (error) throw error;
+      return Array.isArray(data) ? data : [];
+    },
+
+    async listBySeverity(severity: string, limit = 50): Promise<SupervisorReport[]> {
+      const { data, error } = await supabase
+        .from('ai_mgmt_supervisor_reports')
+        .select('*')
+        .eq('severity', severity)
+        .order('created_at', { ascending: false })
+        .limit(limit);
+
+      if (error) throw error;
+      return Array.isArray(data) ? data : [];
+    },
+
+    async getById(id: string): Promise<SupervisorReportWithRelations | null> {
+      const { data, error } = await supabase
+        .from('ai_mgmt_supervisor_reports')
+        .select(`
+          *,
+          interaction:ai_interaction_logs(*),
+          function:ai_functions(*),
+          reviewed_by_profile:profiles(id, nickname, email)
+        `)
+        .eq('id', id)
+        .maybeSingle();
+
+      if (error) throw error;
+      return data;
+    },
+
+    async create(report: Omit<SupervisorReport, 'id' | 'created_at' | 'reviewed_at'>): Promise<SupervisorReport> {
+      const { data, error } = await supabase
+        .from('ai_mgmt_supervisor_reports')
+        .insert(report)
+        .select()
+        .maybeSingle();
+
+      if (error) throw error;
+      if (!data) throw new Error('Failed to create supervisor report');
+      return data;
+    },
+
+    async updateStatus(
+      id: string,
+      status: 'pending' | 'reviewed' | 'resolved' | 'dismissed',
+      reviewedBy?: string
+    ): Promise<SupervisorReport> {
+      const updates: Partial<SupervisorReport> = {
+        status,
+        reviewed_at: new Date().toISOString(),
+      };
+
+      if (reviewedBy) {
+        updates.reviewed_by = reviewedBy;
+      }
+
+      const { data, error } = await supabase
+        .from('ai_mgmt_supervisor_reports')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .maybeSingle();
+
+      if (error) throw error;
+      if (!data) throw new Error('Failed to update supervisor report');
+      return data;
+    },
+
+    async delete(id: string): Promise<void> {
+      const { error } = await supabase
+        .from('ai_mgmt_supervisor_reports')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+    },
+
+    async getStats(): Promise<{
+      total: number;
+      pending: number;
+      reviewed: number;
+      resolved: number;
+      dismissed: number;
+      bySeverity: Record<string, number>;
+    }> {
+      const { data, error } = await supabase
+        .from('ai_mgmt_supervisor_reports')
+        .select('*');
+
+      if (error) throw error;
+
+      const reports = Array.isArray(data) ? data : [];
+      const total = reports.length;
+      const pending = reports.filter(r => r.status === 'pending').length;
+      const reviewed = reports.filter(r => r.status === 'reviewed').length;
+      const resolved = reports.filter(r => r.status === 'resolved').length;
+      const dismissed = reports.filter(r => r.status === 'dismissed').length;
+
+      const bySeverity: Record<string, number> = {
+        low: reports.filter(r => r.severity === 'low').length,
+        medium: reports.filter(r => r.severity === 'medium').length,
+        high: reports.filter(r => r.severity === 'high').length,
+        critical: reports.filter(r => r.severity === 'critical').length,
+      };
+
+      return {
+        total,
+        pending,
+        reviewed,
+        resolved,
+        dismissed,
+        bySeverity,
+      };
     },
   },
 };

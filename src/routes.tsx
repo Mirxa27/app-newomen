@@ -27,6 +27,9 @@ import AiModels from './pages/admin/AiModels';
 import AiVoices from './pages/admin/AiVoices';
 import AiBehaviors from './pages/admin/AiBehaviors';
 import PromptTemplates from './pages/admin/PromptTemplates';
+import AiFunctionConfig from './pages/admin/AiFunctionConfig';
+import SupervisorDashboard from './pages/admin/SupervisorDashboard';
+import AiInteractionLogs from './pages/admin/AiInteractionLogs';
 
 interface RouteConfig {
   name: string;
@@ -202,6 +205,24 @@ const routes: RouteConfig[] = [
     name: 'Prompt Templates',
     path: '/admin/prompt-templates',
     element: <PromptTemplates />,
+    visible: false,
+  },
+  {
+    name: 'AI Function Config',
+    path: '/admin/ai-function-config',
+    element: <AiFunctionConfig />,
+    visible: false,
+  },
+  {
+    name: 'Supervisor Dashboard',
+    path: '/admin/supervisor',
+    element: <SupervisorDashboard />,
+    visible: false,
+  },
+  {
+    name: 'AI Interaction Logs',
+    path: '/admin/ai-logs',
+    element: <AiInteractionLogs />,
     visible: false,
   },
 ];

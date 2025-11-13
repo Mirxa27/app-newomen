@@ -17,7 +17,9 @@ import {
   Brain,
   Mic,
   FileCode,
-  Zap
+  Zap,
+  Eye,
+  Activity
 } from 'lucide-react';
 import { db } from '@/db/api';
 import { toast } from 'sonner';
@@ -170,6 +172,24 @@ export default function AdminDashboard() {
       description: 'Manage reusable prompt templates',
       icon: FileCode,
       link: '/admin/prompt-templates',
+    },
+    {
+      title: 'AI Function Config',
+      description: 'Configure AI providers and models for each function',
+      icon: Settings,
+      link: '/admin/ai-function-config',
+    },
+    {
+      title: 'Supervisor AI',
+      description: 'Monitor and analyze AI interactions',
+      icon: Eye,
+      link: '/admin/supervisor-dashboard',
+    },
+    {
+      title: 'AI Interaction Logs',
+      description: 'View detailed AI interaction history',
+      icon: Activity,
+      link: '/admin/ai-interaction-logs',
     },
     {
       title: 'Analytics',
