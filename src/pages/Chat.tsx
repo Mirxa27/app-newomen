@@ -119,6 +119,7 @@ export default function Chat() {
               preferences: profile.personality_traits,
               personalityInsights: personalityInsights,
             },
+            userId: profile.id,
           },
         }
       );

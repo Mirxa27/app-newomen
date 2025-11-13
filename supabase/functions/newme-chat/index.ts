@@ -1,4 +1,5 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { createClient } from 'jsr:@supabase/supabase-js@2';
 
 interface ChatRequest {
   userMessage: string;
@@ -11,6 +12,7 @@ interface ChatRequest {
     nickname?: string;
     preferences?: Record<string, unknown>;
   };
+  userId?: string;
 }
 
 const NEWME_SYSTEM_PROMPT = `You are NewMe, an AI astrology personality assistant with a brutally honest, Teal Swan-inspired communication style.
@@ -60,8 +62,18 @@ Deno.serve(async (req: Request) => {
     });
   }
 
+  const supabase = createClient(
+    Deno.env.get('SUPABASE_URL')!,
+    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+  );
+
+  const startTime = Date.now();
+  let functionId: string | null = null;
+  let providerId: string | null = null;
+  let modelId: string | null = null;
+
   try {
-    const { userMessage, conversationHistory, userProfile }: ChatRequest = await req.json();
+    const { userMessage, conversationHistory, userProfile, userId }: ChatRequest = await req.json();
 
     if (!userMessage) {
       return new Response(
@@ -70,25 +82,52 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    const anthropicApiKey = Deno.env.get('ANTHROPIC_API_KEY');
-    
-    if (!anthropicApiKey) {
-      console.log('No Anthropic API key found, using mock response');
-      return new Response(
-        JSON.stringify({ 
-          success: true, 
-          response: generateMockResponse(userMessage, userProfile),
-          usingMock: true 
-        }),
-        { 
-          status: 200, 
-          headers: { 
-            'Content-Type': 'application/json',
-            'Access-Control-Allow-Origin': '*',
-          } 
-        }
+    // Get AI configuration from database
+    const { data: config, error: configError } = await supabase
+      .rpc('get_active_ai_config', { p_function_key: 'chat' })
+      .maybeSingle();
+
+    if (configError) {
+      console.error('Error fetching AI config:', configError);
+    }
+
+    // Fallback to environment variable if no config found
+    if (!config) {
+      console.log('No AI configuration found, using fallback');
+      const anthropicApiKey = Deno.env.get('ANTHROPIC_API_KEY');
+      
+      if (!anthropicApiKey) {
+        console.log('No Anthropic API key found, using mock response');
+        return new Response(
+          JSON.stringify({ 
+            success: true, 
+            response: generateMockResponse(userMessage, userProfile),
+            usingMock: true 
+          }),
+          { 
+            status: 200, 
+            headers: { 
+              'Content-Type': 'application/json',
+              'Access-Control-Allow-Origin': '*',
+            } 
+          }
+        );
+      }
+
+      // Use fallback configuration
+      return await callAnthropicDirect(
+        anthropicApiKey,
+        userMessage,
+        conversationHistory,
+        userProfile,
+        NEWME_SYSTEM_PROMPT
       );
     }
+
+    // Store IDs for logging
+    functionId = config.function_id;
+    providerId = config.provider_id;
+    modelId = config.model_id;
 
     // Build conversation context
     const messages = [];
@@ -108,48 +147,97 @@ Deno.serve(async (req: Request) => {
       content: userMessage,
     });
 
-    // Call Claude API
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': anthropicApiKey,
-        'anthropic-version': '2023-06-01',
-      },
-      body: JSON.stringify({
-        model: 'claude-3-5-sonnet-20241022',
-        max_tokens: 300,
-        system: NEWME_SYSTEM_PROMPT,
-        messages: messages,
-      }),
-    });
+    // Call AI API based on provider
+    let aiResponse: string;
+    let tokensUsed = 0;
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Anthropic API error:', errorText);
-      
-      return new Response(
-        JSON.stringify({ 
-          success: true, 
-          response: generateMockResponse(userMessage, userProfile),
-          usingMock: true,
-          error: 'AI service unavailable, using fallback'
+    if (config.provider_name === 'Anthropic') {
+      const response = await fetch(`${config.provider_base_url}/messages`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': config.provider_api_key,
+          'anthropic-version': '2023-06-01',
+        },
+        body: JSON.stringify({
+          model: config.model_id,
+          max_tokens: config.max_tokens || 300,
+          system: config.system_prompt || NEWME_SYSTEM_PROMPT,
+          temperature: config.temperature || 0.7,
+          messages: messages,
         }),
-        { 
-          status: 200, 
-          headers: { 
-            'Content-Type': 'application/json',
-            'Access-Control-Allow-Origin': '*',
-          } 
-        }
-      );
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Anthropic API error: ${errorText}`);
+      }
+
+      const data = await response.json();
+      aiResponse = data.content[0].text;
+      tokensUsed = data.usage?.input_tokens + data.usage?.output_tokens || 0;
+
+    } else if (config.provider_name === 'OpenAI' || config.provider_name === 'Google AI') {
+      // OpenAI-compatible API
+      const response = await fetch(`${config.provider_base_url}/chat/completions`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${config.provider_api_key}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: config.model_id,
+          messages: [
+            { role: 'system', content: config.system_prompt || NEWME_SYSTEM_PROMPT },
+            ...messages
+          ],
+          temperature: config.temperature || 0.7,
+          max_tokens: config.max_tokens || 300,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`${config.provider_name} API error: ${errorText}`);
+      }
+
+      const data = await response.json();
+      aiResponse = data.choices[0].message.content;
+      tokensUsed = data.usage?.total_tokens || 0;
+
+    } else {
+      throw new Error(`Unsupported provider: ${config.provider_name}`);
     }
 
-    const data = await response.json();
-    const aiResponse = data.content[0].text;
+    const responseTime = Date.now() - startTime;
+
+    // Log the interaction
+    if (functionId && userId) {
+      await supabase.from('ai_mgmt_interaction_logs').insert({
+        function_id: functionId,
+        user_id: userId,
+        provider_id: providerId,
+        model_id: modelId,
+        input_text: userMessage,
+        output_text: aiResponse,
+        tokens_used: tokensUsed,
+        response_time_ms: responseTime,
+        status: 'success',
+        metadata: {
+          conversation_length: conversationHistory.length,
+          user_nickname: userProfile.nickname
+        }
+      });
+    }
 
     return new Response(
-      JSON.stringify({ success: true, response: aiResponse, usingMock: false }),
+      JSON.stringify({ 
+        success: true, 
+        response: aiResponse, 
+        usingMock: false,
+        tokensUsed,
+        responseTime
+      }),
       { 
         status: 200, 
         headers: { 
@@ -161,6 +249,23 @@ Deno.serve(async (req: Request) => {
 
   } catch (error) {
     console.error('Error in NewMe chat:', error);
+    
+    const responseTime = Date.now() - startTime;
+
+    // Log failed interaction
+    if (functionId) {
+      await supabase.from('ai_mgmt_interaction_logs').insert({
+        function_id: functionId,
+        user_id: (await req.json()).userId,
+        provider_id: providerId,
+        model_id: modelId,
+        input_text: (await req.json()).userMessage,
+        status: 'error',
+        error_message: error instanceof Error ? error.message : 'Unknown error',
+        response_time_ms: responseTime
+      }).catch(console.error);
+    }
+
     return new Response(
       JSON.stringify({ 
         error: 'Internal server error',
@@ -176,6 +281,77 @@ Deno.serve(async (req: Request) => {
     );
   }
 });
+
+async function callAnthropicDirect(
+  apiKey: string,
+  userMessage: string,
+  conversationHistory: Array<{ sender: string; message: string }>,
+  userProfile: { nickname?: string },
+  systemPrompt: string
+) {
+  const messages = [];
+  const recentHistory = conversationHistory.slice(-10);
+  for (const msg of recentHistory) {
+    messages.push({
+      role: msg.sender === 'user' ? 'user' : 'assistant',
+      content: msg.message,
+    });
+  }
+  messages.push({
+    role: 'user',
+    content: userMessage,
+  });
+
+  const response = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01',
+    },
+    body: JSON.stringify({
+      model: 'claude-3-5-sonnet-20241022',
+      max_tokens: 300,
+      system: systemPrompt,
+      messages: messages,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error('Anthropic API error:', errorText);
+    
+    return new Response(
+      JSON.stringify({ 
+        success: true, 
+        response: generateMockResponse(userMessage, userProfile),
+        usingMock: true,
+        error: 'AI service unavailable, using fallback'
+      }),
+      { 
+        status: 200, 
+        headers: { 
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
+        } 
+      }
+    );
+  }
+
+  const data = await response.json();
+  const aiResponse = data.content[0].text;
+
+  return new Response(
+    JSON.stringify({ success: true, response: aiResponse, usingMock: false }),
+    { 
+      status: 200, 
+      headers: { 
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*',
+      } 
+    }
+  );
+}
 
 function generateMockResponse(userMessage: string, userProfile: { nickname?: string }): string {
   const lowerMessage = userMessage.toLowerCase();

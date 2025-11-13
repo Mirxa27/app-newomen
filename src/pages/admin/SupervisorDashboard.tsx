@@ -5,9 +5,10 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { AlertTriangle, CheckCircle, XCircle, Eye, Loader2, TrendingUp, AlertCircle } from 'lucide-react';
+import { AlertTriangle, CheckCircle, XCircle, Eye, Loader2, TrendingUp, AlertCircle, Play } from 'lucide-react';
 import { db } from '@/db/api';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/db/supabase';
 import type { SupervisorReportWithRelations } from '@/types/types';
 import { toast } from 'sonner';
 import { formatDistanceToNow } from 'date-fns';
@@ -24,6 +25,7 @@ export default function SupervisorDashboard() {
     bySeverity: {} as Record<string, number>,
   });
   const [loading, setLoading] = useState(true);
+  const [analyzing, setAnalyzing] = useState(false);
   const [selectedReport, setSelectedReport] = useState<SupervisorReportWithRelations | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [filterStatus, setFilterStatus] = useState<string>('all');
@@ -46,6 +48,34 @@ export default function SupervisorDashboard() {
       toast.error('Failed to load supervisor reports');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const runBatchAnalysis = async () => {
+    setAnalyzing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('supervisor-batch-analyze', {
+        body: {
+          limit: 20,
+          analysisType: 'quality_check',
+          onlyErrors: false
+        }
+      });
+
+      if (error) {
+        const errorMsg = await error?.context?.text();
+        throw new Error(errorMsg || 'Batch analysis failed');
+      }
+
+      toast.success(`Analysis complete: ${data.analyzed} interactions analyzed, ${data.skipped} skipped`);
+      
+      // Reload data to show new reports
+      await loadData();
+    } catch (error) {
+      console.error('Error running batch analysis:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to run batch analysis');
+    } finally {
+      setAnalyzing(false);
     }
   };
 
@@ -112,11 +142,30 @@ export default function SupervisorDashboard() {
 
   return (
     <div className="container mx-auto p-6 space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Supervisor AI Dashboard</h1>
-        <p className="text-muted-foreground mt-2">
-          Monitor and analyze AI interactions across the platform
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">Supervisor AI Dashboard</h1>
+          <p className="text-muted-foreground mt-2">
+            Monitor and analyze AI interactions across the platform
+          </p>
+        </div>
+        <Button 
+          onClick={runBatchAnalysis} 
+          disabled={analyzing}
+          className="gap-2"
+        >
+          {analyzing ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Analyzing...
+            </>
+          ) : (
+            <>
+              <Play className="w-4 h-4" />
+              Run Batch Analysis
+            </>
+          )}
+        </Button>
       </div>
 
       {/* Stats Cards */}
