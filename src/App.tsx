@@ -4,6 +4,7 @@ import { ThemeProvider } from '@/contexts/ThemeContext';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { RequireAuth } from '@/components/auth/RequireAuth';
 import RequireAdmin from '@/components/auth/RequireAdmin';
+import ErrorBoundary from '@/components/common/ErrorBoundary';
 import InstallPrompt from '@/components/common/InstallPrompt';
 import OfflineIndicator from '@/components/common/OfflineIndicator';
 import routes from './routes';
@@ -11,12 +12,13 @@ import NotFound from './pages/NotFound';
 
 function App() {
   return (
-    <ThemeProvider>
-      <Router>
-        <AuthProvider>
-          <Toaster position="top-right" richColors />
-          <OfflineIndicator />
-          <InstallPrompt />
+    <ErrorBoundary>
+      <ThemeProvider>
+        <Router>
+          <AuthProvider>
+            <Toaster position="top-right" richColors />
+            <OfflineIndicator />
+            <InstallPrompt />
           <Routes>
             {routes.map((route, index) => {
               // Admin routes require admin role
@@ -59,6 +61,7 @@ function App() {
         </AuthProvider>
       </Router>
     </ThemeProvider>
+    </ErrorBoundary>
   );
 }
 

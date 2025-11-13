@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Heart, Wind, Mic, Brain, Music, Play } from 'lucide-react';
 import { db } from '@/db/api';
 import type { WellnessResourceWithFavorite } from '@/types/types';
@@ -110,8 +111,31 @@ export default function Wellness() {
         </Tabs>
 
         {loading ? (
-          <div className="text-center py-12">
-            <p className="text-muted-foreground">Loading resources...</p>
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <Card key={i} className="glass-card">
+                <CardHeader>
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center gap-3">
+                      <Skeleton className="w-12 h-12 rounded-full bg-muted" />
+                      <div className="space-y-2">
+                        <Skeleton className="h-5 w-32 bg-muted" />
+                        <Skeleton className="h-4 w-20 bg-muted" />
+                      </div>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <Skeleton className="w-full h-40 rounded-lg bg-muted" />
+                  <Skeleton className="h-4 w-full bg-muted" />
+                  <Skeleton className="h-4 w-3/4 bg-muted" />
+                  <div className="flex gap-2">
+                    <Skeleton className="h-10 flex-1 bg-muted" />
+                    <Skeleton className="h-10 w-10 bg-muted" />
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
           </div>
         ) : filteredResources.length === 0 ? (
           <Card className="glass-card">

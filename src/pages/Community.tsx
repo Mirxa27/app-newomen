@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Textarea } from '@/components/ui/textarea';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Heart, MessageCircle, Send, Users, Calendar } from 'lucide-react';
 import { db } from '@/db/api';
 import type { CommunityPostWithProfile } from '@/types/types';
@@ -133,9 +134,30 @@ export default function Community() {
 
         <div className="space-y-6">
           {loading ? (
-            <div className="text-center py-12">
-              <p className="text-muted-foreground">Loading posts...</p>
-            </div>
+            <>
+              {[1, 2, 3].map((i) => (
+                <Card key={i} className="glass-card">
+                  <CardHeader>
+                    <div className="flex items-center gap-3">
+                      <Skeleton className="w-10 h-10 rounded-full bg-muted" />
+                      <div className="space-y-2">
+                        <Skeleton className="h-4 w-32 bg-muted" />
+                        <Skeleton className="h-3 w-24 bg-muted" />
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <Skeleton className="h-4 w-full bg-muted" />
+                    <Skeleton className="h-4 w-3/4 bg-muted" />
+                    <Skeleton className="h-4 w-1/2 bg-muted" />
+                    <div className="flex gap-4 pt-4">
+                      <Skeleton className="h-8 w-20 bg-muted" />
+                      <Skeleton className="h-8 w-20 bg-muted" />
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </>
           ) : posts.length === 0 ? (
             <Card className="glass-card">
               <CardContent className="py-12 text-center">

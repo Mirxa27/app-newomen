@@ -6,9 +6,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { User, LogOut, Upload, Save } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { User, LogOut, Upload, Save, Brain } from 'lucide-react';
 import { db } from '@/db/api';
 import { toast } from 'sonner';
+import MemoryTimeline from '@/components/memory/MemoryTimeline';
 
 export default function Profile() {
   const { profile, signOut, refreshProfile } = useAuth();
@@ -204,6 +206,32 @@ export default function Profile() {
             <p className="text-sm text-muted-foreground mt-4">
               Complete your birth information to calculate your full astrology chart
             </p>
+          </CardContent>
+        </Card>
+
+        <Card className="glass-card mt-6">
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <Brain className="w-5 h-5 text-primary" />
+              <CardTitle>Memory Timeline</CardTitle>
+            </div>
+            <CardDescription>
+              Your journey of self-discovery captured over time
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Tabs defaultValue="recent" className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="recent">Recent</TabsTrigger>
+                <TabsTrigger value="all">All Memories</TabsTrigger>
+              </TabsList>
+              <TabsContent value="recent" className="mt-6">
+                <MemoryTimeline userId={profile.id} limit={10} />
+              </TabsContent>
+              <TabsContent value="all" className="mt-6">
+                <MemoryTimeline userId={profile.id} />
+              </TabsContent>
+            </Tabs>
           </CardContent>
         </Card>
 
