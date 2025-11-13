@@ -14,6 +14,13 @@ Users were encountering an error when completing assessments: "Failed to generat
 2. **Edge Function Not Deployed**: The `generate-assessment-insights` Edge Function needed to be redeployed
 
 3. **Insufficient Error Handling**: The frontend error handling didn't provide detailed error messages
+   - Error: "functionError?.context?.text is not a function"
+   - The code assumed `context.text` would always be a function, but error structures vary
+
+4. **Data Type Mismatch**: Assessment submission failed due to database type mismatch
+   - Error: "Failed to submit assessment. Please try again."
+   - Database column `ai_insights` is type `text`, but code was inserting an object
+   - No JSON serialization was performed before insertion
 
 ### Solutions Implemented
 
@@ -56,9 +63,24 @@ The Edge Function includes:
 Enhanced error handling in the assessment submission:
 ```typescript
 if (functionError) {
-  const errorMsg = await functionError?.context?.text();
-  console.error('Edge Function error:', errorMsg || functionError);
-  toast.error('Failed to generate insights. Please try again.');
+  console.error('Edge Function error:', functionError);
+  let errorMsg = 'Failed to generate insights. Please try again.';
+  
+  // Try to extract error message from different possible structures
+  if (functionError.message) {
+    errorMsg = functionError.message;
+  } else if (functionError.context) {
+    try {
+      const contextText = typeof functionError.context.text === 'function' 
+        ? await functionError.context.text()
+        : functionError.context.toString();
+      errorMsg = contextText || errorMsg;
+    } catch (e) {
+      console.error('Failed to extract error context:', e);
+    }
+  }
+  
+  toast.error(errorMsg);
   return;
 }
 
@@ -70,12 +92,51 @@ if (!functionData?.success) {
 ```
 
 **Improvements**:
+- Checks if `context.text` is a function before calling it (fixes "text is not a function" error)
 - Extracts detailed error messages from Edge Function responses
+- Handles multiple error structure variations
 - Logs errors for debugging
 - Provides user-friendly error messages
 - Checks for both network errors and application errors
 
-#### 4. Added Comprehensive Behavior Tracking
+#### 4. Fixed Assessment Submission Data Type Mismatch
+**Files**: `src/pages/AssessmentTake.tsx`, `src/pages/AssessmentResults.tsx`
+
+**Problem**: The database column `ai_insights` is type `text`, but the code was trying to insert an object directly.
+
+**Solution in AssessmentTake.tsx**:
+```typescript
+await db.userAssessments.create({
+  user_id: profile.id,
+  assessment_id: assessment.id,
+  responses: answers as unknown,
+  ai_insights: (typeof insights === 'string' ? insights : JSON.stringify(insights)) as unknown,
+  score_data: {},
+});
+```
+
+**Solution in AssessmentResults.tsx**:
+```typescript
+// Parse ai_insights if it's a string
+let insights: Record<string, unknown> = {};
+try {
+  insights = typeof userAssessment.ai_insights === 'string' 
+    ? JSON.parse(userAssessment.ai_insights)
+    : (userAssessment.ai_insights || {}) as Record<string, unknown>;
+} catch (e) {
+  console.error('Failed to parse insights:', e);
+  insights = {};
+}
+```
+
+**Benefits**:
+- Converts insights object to JSON string before database insertion
+- Parses JSON string back to object when retrieving data
+- Prevents "Failed to submit assessment" error
+- Maintains data integrity
+- Provides fallback for malformed data
+
+#### 5. Added Comprehensive Behavior Tracking
 Added behavior tracking throughout the application:
 
 **Files Modified**:
@@ -153,13 +214,26 @@ All Edge Functions deployed and operational:
 
 ### Conclusion
 
-The "Failed to generate insights" error has been fully resolved through:
-1. Fixing React multiple instance issue in Vite configuration
-2. Deploying the Edge Function for insights generation
-3. Improving error handling and logging
-4. Adding comprehensive behavior tracking
+All critical errors have been fully resolved through:
+1. ✅ Fixing React multiple instance issue in Vite configuration
+2. ✅ Deploying the Edge Function for insights generation
+3. ✅ Improving error handling with proper type checking (fixes "text is not a function")
+4. ✅ Fixing data type mismatch for assessment submission (JSON serialization)
+5. ✅ Adding comprehensive behavior tracking across all pages
 
-The application is now fully functional with all features operational. Users can complete assessments and receive insights (either AI-powered or mock data), and all interactions are properly tracked for personality analysis.
+The application is now fully functional with all features operational. Users can:
+- Complete assessments and receive insights (either AI-powered or mock data)
+- View assessment results with proper data parsing
+- Experience graceful error handling with clear messages
+- Have all interactions properly tracked for personality analysis
+
+### Additional Documentation
+
+For detailed information about specific fixes:
+- **ASSESSMENT_SUBMISSION_FIX.md**: Detailed explanation of the data type mismatch fix
+- **EDGE_FUNCTION_ERROR_FIX.md**: Detailed explanation of the "text is not a function" fix
+- **BEHAVIOR_TRACKING_GUIDE.md**: Complete guide to the behavior tracking system
+- **FINAL_IMPLEMENTATION_SUMMARY.md**: Comprehensive feature documentation
 
 ### Support
 
