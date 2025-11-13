@@ -388,9 +388,24 @@ export default function AssessmentTake() {
       );
 
       if (functionError) {
-        const errorMsg = await functionError?.context?.text();
-        console.error('Edge Function error:', errorMsg || functionError);
-        toast.error('Failed to generate insights. Please try again.');
+        console.error('Edge Function error:', functionError);
+        let errorMsg = 'Failed to generate insights. Please try again.';
+        
+        // Try to extract error message from different possible structures
+        if (functionError.message) {
+          errorMsg = functionError.message;
+        } else if (functionError.context) {
+          try {
+            const contextText = typeof functionError.context.text === 'function' 
+              ? await functionError.context.text()
+              : functionError.context.toString();
+            errorMsg = contextText || errorMsg;
+          } catch (e) {
+            console.error('Failed to extract error context:', e);
+          }
+        }
+        
+        toast.error(errorMsg);
         return;
       }
 
