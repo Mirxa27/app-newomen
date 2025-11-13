@@ -403,19 +403,26 @@ export default function AssessmentTake() {
       const insights = functionData.insights;
       
       // Save assessment results to database
-      await db.userAssessments.create({
-        user_id: profile.id,
-        assessment_id: assessment.id,
-        responses: answers as unknown,
-        ai_insights: insights as unknown,
-        score_data: {},
-      });
+      try {
+        await db.userAssessments.create({
+          user_id: profile.id,
+          assessment_id: assessment.id,
+          responses: answers as unknown,
+          ai_insights: (typeof insights === 'string' ? insights : JSON.stringify(insights)) as unknown,
+          score_data: {},
+        });
+      } catch (dbError) {
+        console.error('Database error saving assessment:', dbError);
+        toast.error('Failed to save assessment results. Please try again.');
+        return;
+      }
 
       toast.success('Assessment completed successfully!');
       navigate(`/assessment/${assessment.id}/results`);
     } catch (error) {
       console.error('Error submitting assessment:', error);
-      toast.error('Failed to submit assessment. Please try again.');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to submit assessment. Please try again.';
+      toast.error(errorMessage);
     } finally {
       setSubmitting(false);
     }
