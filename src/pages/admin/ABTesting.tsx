@@ -94,14 +94,28 @@ export default function ABTesting() {
     try {
       setLoading(true);
       const [experimentsData, functionsData] = await Promise.all([
-        db.abTesting.listExperiments(),
+        db.abTesting.listExperiments().catch((err) => {
+          // Handle case where migration hasn't been run yet
+          if (err?.code === 'PGRST116' || err?.message?.includes('does not exist') || err?.message?.includes('404')) {
+            console.warn('A/B testing tables not found. Please run migration 14_create_ab_testing_system.sql');
+            return [];
+          }
+          throw err;
+        }),
         db.aiMgmtFunctions.list(),
       ]);
-      setExperiments(experimentsData);
+      setExperiments(experimentsData || []);
       setFunctions(functionsData);
     } catch (error) {
       console.error('Error loading data:', error);
-      toast.error('Failed to load experiments');
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      if (errorMessage.includes('does not exist') || errorMessage.includes('404')) {
+        toast.error('A/B testing tables not found. Please run the database migration: 14_create_ab_testing_system.sql', {
+          duration: 10000,
+        });
+      } else {
+        toast.error('Failed to load experiments');
+      }
     } finally {
       setLoading(false);
     }

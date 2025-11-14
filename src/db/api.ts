@@ -2849,7 +2849,14 @@ export const db = {
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        // Handle case where table doesn't exist (migration not run)
+        if (error.code === 'PGRST116' || error.message?.includes('does not exist')) {
+          console.warn('ab_experiments table does not exist. Please run migration 14_create_ab_testing_system.sql');
+          return [];
+        }
+        throw error;
+      }
       return Array.isArray(data) ? data : [];
     },
 
