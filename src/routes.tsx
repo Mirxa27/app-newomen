@@ -16,6 +16,7 @@ import Gamification from './pages/Gamification';
 import Subscription from './pages/Subscription';
 import ShadowWork from './pages/ShadowWork';
 import ShadowWorkJourney from './pages/ShadowWorkJourney';
+import DivinationGameSession from './pages/DivinationGameSession';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import UserManagement from './pages/admin/UserManagement';
 import AssessmentManagement from './pages/admin/AssessmentManagement';
@@ -30,6 +31,12 @@ import PromptTemplates from './pages/admin/PromptTemplates';
 import AiFunctionConfig from './pages/admin/AiFunctionConfig';
 import SupervisorDashboard from './pages/admin/SupervisorDashboard';
 import AiInteractionLogs from './pages/admin/AiInteractionLogs';
+import RealtimeConfig from './pages/admin/RealtimeConfig';
+import ConversationManagement from './pages/admin/ConversationManagement';
+import PostManagement from './pages/admin/PostManagement';
+import EventManagement from './pages/admin/EventManagement';
+import AchievementManagement from './pages/admin/AchievementManagement';
+import ABTesting from './pages/admin/ABTesting';
 
 interface RouteConfig {
   name: string;
@@ -142,6 +149,12 @@ const routes: RouteConfig[] = [
     visible: false,
   },
   {
+    name: 'Divination Game Session',
+    path: '/divinations/game/:sessionId',
+    element: <DivinationGameSession />,
+    visible: false,
+  },
+  {
     name: 'Admin Dashboard',
     path: '/admin',
     element: <AdminDashboard />,
@@ -223,6 +236,42 @@ const routes: RouteConfig[] = [
     name: 'AI Interaction Logs',
     path: '/admin/ai-logs',
     element: <AiInteractionLogs />,
+    visible: false,
+  },
+  {
+    name: 'Realtime Config',
+    path: '/admin/realtime-config',
+    element: <RealtimeConfig />,
+    visible: false,
+  },
+  {
+    name: 'Conversation Management',
+    path: '/admin/conversations',
+    element: <ConversationManagement />,
+    visible: false,
+  },
+  {
+    name: 'Post Management',
+    path: '/admin/posts',
+    element: <PostManagement />,
+    visible: false,
+  },
+  {
+    name: 'Event Management',
+    path: '/admin/events',
+    element: <EventManagement />,
+    visible: false,
+  },
+  {
+    name: 'Achievement Management',
+    path: '/admin/achievements',
+    element: <AchievementManagement />,
+    visible: false,
+  },
+  {
+    name: 'A/B Testing',
+    path: '/admin/ab-testing',
+    element: <ABTesting />,
     visible: false,
   },
 ];

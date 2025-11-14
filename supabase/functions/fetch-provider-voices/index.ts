@@ -1,8 +1,11 @@
-import { createClient } from 'npm:@supabase/supabase-js@2';
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { createClient } from 'jsr:@supabase/supabase-js@2';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS, GET',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Max-Age': '86400',
 };
 
 interface RequestBody {
@@ -11,7 +14,10 @@ interface RequestBody {
 
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
+    return new Response(null, { 
+      status: 200,
+      headers: corsHeaders 
+    });
   }
 
   try {
@@ -32,17 +38,30 @@ Deno.serve(async (req: Request) => {
       throw new Error('Unauthorized');
     }
 
-    const { data: profile } = await supabaseClient
+    const { data: profile, error: profileError } = await supabaseClient
       .from('profiles')
       .select('role')
       .eq('id', user.id)
-      .single();
+      .maybeSingle();
 
-    if (profile?.role !== 'admin') {
+    if (profileError) {
+      console.error('Error fetching profile:', profileError);
+      throw new Error('Failed to verify admin access');
+    }
+
+    if (!profile || profile.role !== 'admin') {
       throw new Error('Admin access required');
     }
 
-    const { provider_id }: RequestBody = await req.json();
+    let requestBody: RequestBody;
+    try {
+      requestBody = await req.json();
+    } catch (jsonError) {
+      console.error('Error parsing request body:', jsonError);
+      throw new Error('Invalid request body');
+    }
+
+    const { provider_id } = requestBody;
 
     if (!provider_id) {
       throw new Error('provider_id is required');
@@ -58,21 +77,31 @@ Deno.serve(async (req: Request) => {
       throw new Error('Provider not found');
     }
 
-    if (!provider.api_key) {
-      throw new Error('Provider API key not configured');
+    // Check if provider supports voice fetching
+    const providerNameLower = provider.name.toLowerCase();
+    const supportsVoices = providerNameLower.includes('openai') || 
+                          providerNameLower.includes('google') || 
+                          providerNameLower.includes('elevenlabs');
+    
+    if (!supportsVoices) {
+      throw new Error(`Provider "${provider.name}" does not support automatic voice fetching. Supported providers: OpenAI, Google, ElevenLabs`);
+    }
+
+    // For OpenAI, API key is not required (voices are predefined)
+    // For Google and ElevenLabs, API key is required
+    if ((providerNameLower.includes('google') || providerNameLower.includes('elevenlabs')) && !provider.api_key) {
+      throw new Error(`Provider "${provider.name}" requires an API key to fetch voices. Please configure the API key first.`);
     }
 
     let voices: any[] = [];
 
     // Fetch voices based on provider
-    if (provider.name.toLowerCase().includes('openai')) {
+    if (providerNameLower.includes('openai')) {
       voices = await fetchOpenAIVoices(provider);
-    } else if (provider.name.toLowerCase().includes('google')) {
+    } else if (providerNameLower.includes('google')) {
       voices = await fetchGoogleVoices(provider);
-    } else if (provider.name.toLowerCase().includes('elevenlabs')) {
+    } else if (providerNameLower.includes('elevenlabs')) {
       voices = await fetchElevenLabsVoices(provider);
-    } else {
-      throw new Error('Provider not supported for automatic voice fetching');
     }
 
     // Insert or update voices in database
@@ -108,7 +137,11 @@ Deno.serve(async (req: Request) => {
     });
   } catch (error) {
     console.error('Error fetching voices:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    return new Response(JSON.stringify({ 
+      error: errorMessage,
+      message: errorMessage 
+    }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 400,
     });

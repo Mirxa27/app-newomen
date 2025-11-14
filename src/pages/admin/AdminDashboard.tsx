@@ -50,20 +50,37 @@ export default function AdminDashboard() {
 
   const loadStats = async () => {
     try {
-      const [users, assessments, posts, events] = await Promise.all([
+      const [users, assessments, posts, events, achievements] = await Promise.all([
         db.profiles.listAll(),
         db.assessments.list(),
         db.communityPosts.list(1, 1000),
         db.communityEvents.list(),
+        db.gamification.getAllAchievements(),
       ]);
+
+      // Count conversations for all users
+      let totalConversations = 0;
+      try {
+        for (const user of users.slice(0, 10)) { // Sample first 10 users to avoid timeout
+          const conversations = await db.conversations.list(user.id, 1);
+          totalConversations += conversations.length;
+        }
+        // Estimate total based on sample
+        if (users.length > 10) {
+          totalConversations = Math.round((totalConversations / 10) * users.length);
+        }
+      } catch (error) {
+        console.error('Error counting conversations:', error);
+        // Continue with 0 if counting fails
+      }
 
       setStats({
         totalUsers: users.length,
-        totalConversations: 0,
+        totalConversations,
         totalAssessments: assessments.length,
         totalPosts: posts.length,
         totalEvents: events.length,
-        totalAchievements: 0,
+        totalAchievements: achievements.length,
       });
     } catch (error) {
       console.error('Error loading stats:', error);
@@ -192,10 +209,22 @@ export default function AdminDashboard() {
       link: '/admin/ai-interaction-logs',
     },
     {
+      title: 'Realtime Config',
+      description: 'Configure OpenAI Realtime & Transcription API',
+      icon: Mic,
+      link: '/admin/realtime-config',
+    },
+    {
       title: 'Analytics',
       description: 'View platform analytics and insights',
       icon: BarChart3,
       link: '/admin/analytics',
+    },
+    {
+      title: 'A/B Testing',
+      description: 'Create and manage A/B tests for AI configurations',
+      icon: BarChart3,
+      link: '/admin/ab-testing',
     },
   ];
 

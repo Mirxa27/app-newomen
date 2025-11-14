@@ -1,15 +1,10 @@
 
-    import { defineConfig, loadConfigFromFile } from "vite";
-    import type { Plugin, ConfigEnv } from "vite";
-    import tailwindcss from "tailwindcss";
-    import autoprefixer from "autoprefixer";
-    import fs from "fs/promises";
-    import path from "path";
-    import {
-      makeTagger,
-      injectedGuiListenerPlugin,
-      injectOnErrorPlugin
-    } from "miaoda-sc-plugin";
+import { defineConfig, loadConfigFromFile } from "vite";
+import type { Plugin, ConfigEnv } from "vite";
+import tailwindcss from "tailwindcss";
+import autoprefixer from "autoprefixer";
+import fs from "fs/promises";
+import path from "path";
 
     const env: ConfigEnv = { command: "serve", mode: "development" };
     const configFile = path.resolve(__dirname, "vite.config.ts");
@@ -18,12 +13,32 @@
 
     export default defineConfig({
       ...userConfig,
+      resolve: {
+        ...userConfig?.resolve,
+        alias: {
+          ...userConfig?.resolve?.alias,
+        },
+        dedupe: [
+          ...(userConfig?.resolve?.dedupe || []),
+          'react',
+          'react-dom',
+          'react/jsx-runtime',
+          'react-helmet-async',
+        ],
+        preserveSymlinks: false,
+      },
+      optimizeDeps: {
+        ...userConfig?.optimizeDeps,
+        include: [
+          ...(userConfig?.optimizeDeps?.include || []),
+          'react',
+          'react-dom',
+          'react/jsx-runtime',
+          'react/jsx-dev-runtime',
+        ],
+        force: true,
+      },
       plugins: [
-        makeTagger(),
-        injectedGuiListenerPlugin({
-          path: 'https://miaoda-resource-static.s3cdn.medo.dev/common/v2/injected.js'
-        }),
-        injectOnErrorPlugin(),
         ...(userConfig?.plugins || []),
         
 {
@@ -31,15 +46,17 @@
   configureServer(server) {
     let hmrEnabled = true;
 
-    // 包装原来的 send 方法
-    const _send = server.ws.send;
-    server.ws.send = (payload) => {
-      if (hmrEnabled) {
-        return _send.call(server.ws, payload);
-      } else {
-        console.log('[HMR disabled] skipped payload:', payload.type);
-      }
-    };
+    // 包装原来的 send 方法 - 只在 WebSocket 连接存在时包装
+    if (server.ws) {
+      const _send = server.ws.send.bind(server.ws);
+      server.ws.send = (payload) => {
+        if (hmrEnabled) {
+          return _send(payload);
+        } else {
+          console.log('[HMR disabled] skipped payload:', payload.type);
+        }
+      };
+    }
 
     // 提供接口切换 HMR
     server.middlewares.use('/innerapi/v1/sourcecode/__hmr_off', (req, res) => {
@@ -114,4 +131,3 @@
 
       ]
     });
-    

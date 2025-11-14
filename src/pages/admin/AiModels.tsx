@@ -54,11 +54,56 @@ export default function AiModels() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Validation
+    if (!formData.provider_id) {
+      toast.error('Provider is required');
+      return;
+    }
+
+    if (!formData.model_id?.trim()) {
+      toast.error('Model ID is required');
+      return;
+    }
+
+    if (!formData.model_name?.trim()) {
+      toast.error('Model name is required');
+      return;
+    }
+
+    if (!formData.model_type) {
+      toast.error('Model type is required');
+      return;
+    }
+
+    // Validate JSON capabilities
+    let parsedCapabilities: string[];
+    try {
+      parsedCapabilities = JSON.parse(formData.capabilities);
+      if (!Array.isArray(parsedCapabilities)) {
+        throw new Error('Capabilities must be a valid JSON array');
+      }
+    } catch (error) {
+      toast.error('Invalid JSON format for capabilities. Must be an array.');
+      return;
+    }
+
+    // Validate JSON parameters
+    let parsedParameters: Record<string, unknown>;
+    try {
+      parsedParameters = JSON.parse(formData.parameters);
+      if (typeof parsedParameters !== 'object' || Array.isArray(parsedParameters)) {
+        throw new Error('Parameters must be a valid JSON object');
+      }
+    } catch (error) {
+      toast.error('Invalid JSON format for parameters');
+      return;
+    }
+
     try {
       const modelData = {
         ...formData,
-        capabilities: JSON.parse(formData.capabilities),
-        parameters: JSON.parse(formData.parameters),
+        capabilities: parsedCapabilities,
+        parameters: parsedParameters,
       };
 
       if (editingModel) {
@@ -74,7 +119,8 @@ export default function AiModels() {
       loadData();
     } catch (error) {
       console.error('Error saving model:', error);
-      toast.error('Failed to save model');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to save model';
+      toast.error(errorMessage);
     }
   };
 

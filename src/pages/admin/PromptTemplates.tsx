@@ -50,10 +50,39 @@ export default function PromptTemplates() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Validation
+    if (!formData.name.trim()) {
+      toast.error('Template name is required');
+      return;
+    }
+
+    if (!formData.category.trim()) {
+      toast.error('Category is required');
+      return;
+    }
+
+    if (!formData.template.trim()) {
+      toast.error('Template content is required');
+      return;
+    }
+
     try {
+      // Validate JSON variables
+      let variables: Array<{ name: string; type: string; description: string }>;
+      try {
+        variables = JSON.parse(formData.variables);
+        if (!Array.isArray(variables)) {
+          toast.error('Variables must be a JSON array');
+          return;
+        }
+      } catch (error) {
+        toast.error('Invalid JSON in variables field');
+        return;
+      }
+
       const templateData = {
         ...formData,
-        variables: JSON.parse(formData.variables),
+        variables,
         created_by: profile?.id || null,
       };
 
@@ -70,7 +99,8 @@ export default function PromptTemplates() {
       loadTemplates();
     } catch (error) {
       console.error('Error saving template:', error);
-      toast.error('Failed to save template');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to save template';
+      toast.error(errorMessage);
     }
   };
 

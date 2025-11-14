@@ -54,11 +54,40 @@ export default function AiBehaviors() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Validation
+    if (!formData.name.trim()) {
+      toast.error('Behavior name is required');
+      return;
+    }
+
+    if (!formData.system_prompt.trim()) {
+      toast.error('System prompt is required');
+      return;
+    }
+
     try {
+      // Validate JSON fields
+      let personalityTraits: Record<string, unknown>;
+      let responseStyle: Record<string, unknown>;
+      
+      try {
+        personalityTraits = JSON.parse(formData.personality_traits);
+      } catch (error) {
+        toast.error('Invalid JSON in personality traits');
+        return;
+      }
+
+      try {
+        responseStyle = JSON.parse(formData.response_style);
+      } catch (error) {
+        toast.error('Invalid JSON in response style');
+        return;
+      }
+
       const behaviorData = {
         ...formData,
-        personality_traits: JSON.parse(formData.personality_traits),
-        response_style: JSON.parse(formData.response_style),
+        personality_traits: personalityTraits,
+        response_style: responseStyle,
         model_id: formData.model_id || null,
       };
 
@@ -75,7 +104,8 @@ export default function AiBehaviors() {
       loadData();
     } catch (error) {
       console.error('Error saving behavior:', error);
-      toast.error('Failed to save behavior');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to save behavior';
+      toast.error(errorMessage);
     }
   };
 

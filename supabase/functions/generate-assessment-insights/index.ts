@@ -1,4 +1,5 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { getApiKey } from '../_shared/get-api-key.ts';
 
 interface AssessmentRequest {
   category: string;
@@ -56,7 +57,7 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    const anthropicApiKey = Deno.env.get('ANTHROPIC_API_KEY');
+    const anthropicApiKey = await getApiKey('Anthropic', 'ANTHROPIC_API_KEY');
     
     if (!anthropicApiKey) {
       console.log('No Anthropic API key found, using mock insights');
@@ -108,7 +109,7 @@ Format your response as JSON:
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
-        model: 'claude-3-5-sonnet-20241022',
+        model: 'claude-3-5-haiku-20241022', // Using Haiku (cheapest Claude model) for cost savings
         max_tokens: 1024,
         messages: [
           {

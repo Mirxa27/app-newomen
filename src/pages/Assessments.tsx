@@ -4,17 +4,19 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Brain, Heart, Briefcase, TrendingUp, Star, Lock, CheckCircle2 } from 'lucide-react';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Brain, Heart, Briefcase, TrendingUp, Star, Lock, CheckCircle2, Sparkles, Smile } from 'lucide-react';
 import { db } from '@/db/api';
 import type { Assessment } from '@/types/types';
 
-const categoryIcons = {
+const categoryIcons: Record<string, typeof Brain> = {
   personality: Brain,
   relationships: Heart,
   career: Briefcase,
   wellness: TrendingUp,
   astrology: Star,
+  emotional: Smile,
+  spiritual: Sparkles,
 };
 
 export default function Assessments() {
@@ -23,6 +25,8 @@ export default function Assessments() {
   const [completedIds, setCompletedIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+
+  const isVisitor = !user;
 
   useEffect(() => {
     loadAssessments();
@@ -44,15 +48,18 @@ export default function Assessments() {
     }
   };
 
+  const visitorAccessibleAssessments = assessments.filter((a) => a.is_visitor_accessible === true);
+  const premiumAssessments = assessments.filter((a) => !a.is_visitor_accessible);
+  
   const filteredAssessments = assessments.filter((assessment) => {
     if (selectedCategory === 'all') return true;
-    if (selectedCategory === 'free') return assessment.is_free;
+    if (selectedCategory === 'free') return assessment.is_visitor_accessible === true;
     if (selectedCategory === 'completed') return completedIds.has(assessment.id);
     return assessment.category === selectedCategory;
   });
 
-  const freeAssessments = assessments.filter((a) => a.is_free);
-  const paidAssessments = assessments.filter((a) => !a.is_free);
+  const freeAssessments = visitorAccessibleAssessments;
+  const paidAssessments = premiumAssessments;
 
   return (
     <div className="min-h-screen relative">
@@ -121,9 +128,10 @@ export default function Assessments() {
         ) : (
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
             {filteredAssessments.map((assessment) => {
-              const Icon = categoryIcons[assessment.category];
+              const Icon = categoryIcons[assessment.category] || Brain;
               const isCompleted = completedIds.has(assessment.id);
-              const isLocked = !assessment.is_free && !user;
+              const isVisitorAccessible = assessment.is_visitor_accessible === true;
+              const isLocked = !isVisitorAccessible && !user;
 
               return (
                 <Card
@@ -149,11 +157,18 @@ export default function Assessments() {
                             <Badge variant="outline" className="capitalize">
                               {assessment.category}
                             </Badge>
-                            {assessment.is_free ? (
-                              <Badge variant="secondary">Free</Badge>
+                            {isVisitorAccessible ? (
+                              <Badge variant="secondary" className="bg-green-500/20 text-green-300 border-green-500/30">
+                                Free - No signup required
+                              </Badge>
                             ) : (
                               <Badge variant="default" className="cosmic-gradient">
                                 Premium
+                              </Badge>
+                            )}
+                            {assessment.duration_minutes && (
+                              <Badge variant="outline" className="text-xs">
+                                {assessment.duration_minutes} min
                               </Badge>
                             )}
                           </div>
@@ -165,10 +180,17 @@ export default function Assessments() {
                     <CardDescription>{assessment.description}</CardDescription>
                     
                     {isLocked ? (
-                      <Button variant="outline" className="w-full" disabled>
-                        <Lock className="w-4 h-4 mr-2" />
-                        Sign in to access
-                      </Button>
+                      <div className="space-y-2">
+                        <Button variant="outline" className="w-full" disabled>
+                          <Lock className="w-4 h-4 mr-2" />
+                          Sign in to access
+                        </Button>
+                        {isVisitor && (
+                          <p className="text-xs text-center text-muted-foreground">
+                            Sign up to unlock 20+ premium assessments
+                          </p>
+                        )}
+                      </div>
                     ) : (
                       <Link to={`/assessment/${assessment.id}`}>
                         <Button className="w-full cosmic-gradient">

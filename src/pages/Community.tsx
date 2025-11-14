@@ -40,13 +40,25 @@ export default function Community() {
   };
 
   const handleCreatePost = async () => {
-    if (!newPost.trim() || !profile || posting) return;
+    if (!profile || posting) return;
+
+    // Validation
+    const trimmedPost = newPost.trim();
+    if (!trimmedPost) {
+      toast.error('Post content cannot be empty');
+      return;
+    }
+
+    if (trimmedPost.length > 5000) {
+      toast.error('Post content must be less than 5000 characters');
+      return;
+    }
 
     try {
       setPosting(true);
       const post = await db.communityPosts.create({
         user_id: profile.id,
-        content: newPost.trim(),
+        content: trimmedPost,
         post_type: 'text',
         images: [],
         poll_options: [],
@@ -56,7 +68,7 @@ export default function Community() {
       // Track post creation (Newme Brain)
       db.newmeBrain.trackBehavior(profile.id, 'community_post_created', {
         post_id: post.id,
-        content_length: newPost.trim().length,
+        content_length: trimmedPost.length,
       });
 
       const postWithProfile = await db.communityPosts.getById(post.id);
@@ -67,7 +79,8 @@ export default function Community() {
       toast.success('Post created successfully');
     } catch (error) {
       console.error('Error creating post:', error);
-      toast.error('Failed to create post');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to create post';
+      toast.error(errorMessage);
     } finally {
       setPosting(false);
     }

@@ -123,10 +123,45 @@ export default function AiFunctionConfig() {
   };
 
   const handleSave = async () => {
+    // Validation
+    if (!formData.function_id) {
+      toast.error('Function is required');
+      return;
+    }
+
+    if (!formData.provider_id) {
+      toast.error('Provider is required');
+      return;
+    }
+
+    if (!formData.model_id) {
+      toast.error('Model is required');
+      return;
+    }
+
+    if (!formData.system_prompt.trim()) {
+      toast.error('System prompt is required');
+      return;
+    }
+
+    if (formData.temperature < 0 || formData.temperature > 2) {
+      toast.error('Temperature must be between 0 and 2');
+      return;
+    }
+
+    if (formData.max_tokens < 100 || formData.max_tokens > 32000) {
+      toast.error('Max tokens must be between 100 and 32000');
+      return;
+    }
+
     try {
-      let additionalConfig = {};
+      let additionalConfig: Record<string, unknown> = {};
       try {
         additionalConfig = JSON.parse(formData.additional_config);
+        if (typeof additionalConfig !== 'object' || Array.isArray(additionalConfig)) {
+          toast.error('Additional config must be a JSON object');
+          return;
+        }
       } catch {
         toast.error('Invalid JSON in additional config');
         return;
@@ -157,7 +192,8 @@ export default function AiFunctionConfig() {
       }
     } catch (error) {
       console.error('Error saving config:', error);
-      toast.error('Failed to save configuration');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to save configuration';
+      toast.error(errorMessage);
     }
   };
 

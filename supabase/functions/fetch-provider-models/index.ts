@@ -1,8 +1,11 @@
-import { createClient } from 'npm:@supabase/supabase-js@2';
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { createClient } from 'jsr:@supabase/supabase-js@2';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS, GET',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Max-Age': '86400',
 };
 
 interface RequestBody {
@@ -11,7 +14,10 @@ interface RequestBody {
 
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
+    return new Response(null, { 
+      status: 200,
+      headers: corsHeaders 
+    });
   }
 
   try {
@@ -32,17 +38,30 @@ Deno.serve(async (req: Request) => {
       throw new Error('Unauthorized');
     }
 
-    const { data: profile } = await supabaseClient
+    const { data: profile, error: profileError } = await supabaseClient
       .from('profiles')
       .select('role')
       .eq('id', user.id)
-      .single();
+      .maybeSingle();
 
-    if (profile?.role !== 'admin') {
+    if (profileError) {
+      console.error('Error fetching profile:', profileError);
+      throw new Error('Failed to verify admin access');
+    }
+
+    if (!profile || profile.role !== 'admin') {
       throw new Error('Admin access required');
     }
 
-    const { provider_id }: RequestBody = await req.json();
+    let requestBody: RequestBody;
+    try {
+      requestBody = await req.json();
+    } catch (jsonError) {
+      console.error('Error parsing request body:', jsonError);
+      throw new Error('Invalid request body');
+    }
+
+    const { provider_id } = requestBody;
 
     if (!provider_id) {
       throw new Error('provider_id is required');
@@ -65,14 +84,17 @@ Deno.serve(async (req: Request) => {
     let models: any[] = [];
 
     // Fetch models based on provider type
-    if (provider.name.toLowerCase().includes('openai') || provider.api_url?.includes('openai')) {
+    const providerNameLower = provider.name.toLowerCase();
+    if (providerNameLower.includes('openai') || provider.api_url?.includes('openai')) {
       models = await fetchOpenAIModels(provider);
-    } else if (provider.name.toLowerCase().includes('anthropic')) {
+    } else if (providerNameLower.includes('anthropic')) {
       models = await fetchAnthropicModels(provider);
-    } else if (provider.name.toLowerCase().includes('google')) {
+    } else if (providerNameLower.includes('google')) {
       models = await fetchGoogleModels(provider);
+    } else if (providerNameLower.includes('z.ai') || providerNameLower.includes('zai')) {
+      models = await fetchZAIModels(provider);
     } else {
-      throw new Error('Provider not supported for automatic model fetching');
+      throw new Error(`Provider "${provider.name}" is not supported for automatic model fetching. Supported providers: OpenAI, Anthropic, Google AI, Z.ai`);
     }
 
     // Insert or update models in database
@@ -106,7 +128,11 @@ Deno.serve(async (req: Request) => {
     });
   } catch (error) {
     console.error('Error fetching models:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    return new Response(JSON.stringify({ 
+      error: errorMessage,
+      message: errorMessage 
+    }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 400,
     });
@@ -204,6 +230,34 @@ async function fetchGoogleModels(provider: any) {
       model_type: 'chat',
       capabilities: { streaming: true, functions: false, vision: true },
       parameters: { temperature: 0.7, max_tokens: 2048 },
+    },
+  ];
+}
+
+async function fetchZAIModels(provider: any) {
+  // Z.ai provides GLM models for coding tools (GLM-4.6, GLM-4.5-Air)
+  // Based on https://docs.z.ai/devpack/overview
+  return [
+    {
+      model_id: 'GLM-4.6',
+      model_name: 'GLM-4.6',
+      model_type: 'chat',
+      capabilities: { streaming: true, functions: true, coding: true },
+      parameters: { temperature: 0.7, max_tokens: 4096 },
+    },
+    {
+      model_id: 'GLM-4.5-Air',
+      model_name: 'GLM-4.5-Air',
+      model_type: 'chat',
+      capabilities: { streaming: true, functions: true, coding: true },
+      parameters: { temperature: 0.7, max_tokens: 4096 },
+    },
+    {
+      model_id: 'GLM-4.5',
+      model_name: 'GLM-4.5',
+      model_type: 'chat',
+      capabilities: { streaming: true, functions: true, coding: true },
+      parameters: { temperature: 0.7, max_tokens: 4096 },
     },
   ];
 }

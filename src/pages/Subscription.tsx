@@ -160,7 +160,23 @@ export default function Subscription() {
       });
 
       if (error) {
-        const errorMsg = await error?.context?.text();
+        // Handle different error formats
+        let errorMsg = 'Failed to verify subscription';
+        if (typeof error === 'string') {
+          errorMsg = error;
+        } else if (error?.message) {
+          errorMsg = error.message;
+        } else if (error?.context) {
+          try {
+            if (typeof error.context === 'string') {
+              errorMsg = error.context;
+            } else if (error.context?.message) {
+              errorMsg = error.context.message;
+            }
+          } catch (e) {
+            // Ignore parsing errors
+          }
+        }
         console.error('Error in paypal-subscription:', errorMsg);
         toast.error('Failed to verify subscription');
         return;
@@ -217,7 +233,23 @@ export default function Subscription() {
       });
 
       if (error) {
-        const errorMsg = await error?.context?.text();
+        // Handle different error formats
+        let errorMsg = 'Failed to initiate payment';
+        if (typeof error === 'string') {
+          errorMsg = error;
+        } else if (error?.message) {
+          errorMsg = error.message;
+        } else if (error?.context) {
+          try {
+            if (typeof error.context === 'string') {
+              errorMsg = error.context;
+            } else if (error.context?.message) {
+              errorMsg = error.context.message;
+            }
+          } catch (e) {
+            // Ignore parsing errors
+          }
+        }
         console.error('Error in paypal-subscription:', errorMsg);
         
         if (errorMsg?.includes('PayPal credentials not configured')) {

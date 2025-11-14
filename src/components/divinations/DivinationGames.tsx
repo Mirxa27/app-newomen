@@ -57,6 +57,29 @@ export default function DivinationGames() {
     }
   };
 
+  const startGameSession = async (question: DivinationQuestion) => {
+    try {
+      // Create a new game session
+      const sessionId = `game-${question.id}-${Date.now()}`;
+      
+      // Navigate to game session page with question data
+      navigate(`/divinations/game/${sessionId}`, {
+        state: {
+          question,
+          sessionId,
+          gameType: question.question_type,
+        },
+      });
+    } catch (error) {
+      console.error('Error starting game session:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to start game session.',
+        variant: 'destructive',
+      });
+    }
+  };
+
   const renderQuestionCard = (question: DivinationQuestion) => (
     <Card key={question.id} className="cosmic-card hover:border-primary/50 transition-colors">
       <CardHeader>
@@ -81,12 +104,7 @@ export default function DivinationGames() {
           variant="outline"
           size="sm"
           className="w-full"
-          onClick={() => {
-            toast({
-              title: 'Coming Soon',
-              description: 'Individual game sessions will be available soon!',
-            });
-          }}
+          onClick={() => startGameSession(question)}
         >
           <Play className="h-4 w-4 mr-2" />
           Start This Exercise

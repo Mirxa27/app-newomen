@@ -1,5 +1,5 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-import { createClient } from "npm:@supabase/supabase-js@2";
+import { createClient } from "jsr:@supabase/supabase-js@2";
 
 const PAYPAL_API_BASE = Deno.env.get("PAYPAL_MODE") === "live"
   ? "https://api-m.paypal.com"
@@ -14,6 +14,12 @@ interface PayPalAccessTokenResponse {
   expires_in: number;
 }
 
+interface PayPalLink {
+  rel: string;
+  href: string;
+  method: string;
+}
+
 interface PayPalSubscriptionResponse {
   id: string;
   status: string;
@@ -23,6 +29,7 @@ interface PayPalSubscriptionResponse {
   subscriber: {
     email_address: string;
   };
+  links?: PayPalLink[];
 }
 
 interface CreateSubscriptionRequest {
@@ -142,7 +149,7 @@ async function getSubscriptionDetails(
 }
 
 async function updateUserSubscription(
-  supabase: ReturnType<typeof createClient>,
+  supabaseClient: ReturnType<typeof createClient>,
   userId: string,
   tier: string,
   subscriptionId: string
@@ -150,11 +157,24 @@ async function updateUserSubscription(
   const endDate = new Date();
   endDate.setMonth(endDate.getMonth() + 1);
 
-  const { error } = await supabase
+  // First get current subscription status
+  const { data: currentProfile } = await supabaseClient
+    .from("profiles")
+    .select("subscription_tier, subscription_status")
+    .eq("id", userId)
+    .maybeSingle();
+
+  const { error } = await (supabaseClient as unknown as {
+    from: (table: string) => {
+      update: (values: Record<string, unknown>) => {
+        eq: (column: string, value: string) => Promise<{ error: Error | null }>;
+      };
+    };
+  })
     .from("profiles")
     .update({
-      subscription_tier: tier,
-      subscription_status: "active",
+      subscription_tier: tier as "free" | "discovery" | "growth" | "transformation",
+      subscription_status: "active" as "active" | "trial" | "canceled" | "expired",
       subscription_start_date: new Date().toISOString(),
       subscription_end_date: endDate.toISOString(),
       trial_end_date: null,
@@ -165,12 +185,26 @@ async function updateUserSubscription(
     throw new Error(`Failed to update user subscription: ${error.message}`);
   }
 
-  await supabase.from("subscription_history").insert({
-    user_id: userId,
-    new_tier: tier,
-    new_status: "active",
-    change_reason: `PayPal subscription created: ${subscriptionId}`,
-  });
+  const { error: historyError } = await (supabaseClient as unknown as {
+    from: (table: string) => {
+      insert: (values: Record<string, unknown>) => Promise<{ error: Error | null }>;
+    };
+  })
+    .from("subscription_history")
+    .insert({
+      user_id: userId,
+      previous_tier: (currentProfile as { subscription_tier?: string; subscription_status?: string } | null)?.subscription_tier || null,
+      new_tier: tier,
+      previous_status: (currentProfile as { subscription_tier?: string; subscription_status?: string } | null)?.subscription_status || null,
+      new_status: "active",
+      change_reason: `PayPal subscription created: ${subscriptionId}`,
+      changed_by: userId,
+    });
+
+  if (historyError) {
+    console.error("Failed to create subscription history:", historyError);
+    // Don't throw - subscription update succeeded
+  }
 }
 
 Deno.serve(async (req: Request) => {
@@ -214,7 +248,7 @@ Deno.serve(async (req: Request) => {
       const subscription = await createSubscription(accessToken, createRequest);
 
       const approvalUrl = subscription.links?.find(
-        (link: { rel: string }) => link.rel === "approve"
+        (link: PayPalLink) => link.rel === "approve"
       )?.href;
 
       return new Response(
@@ -253,7 +287,7 @@ Deno.serve(async (req: Request) => {
         }
 
         await updateUserSubscription(
-          supabase,
+          supabase as ReturnType<typeof createClient>,
           verifyRequest.userId,
           tier,
           subscription.id
@@ -305,7 +339,13 @@ Deno.serve(async (req: Request) => {
         throw new Error(`Failed to cancel subscription: ${error}`);
       }
 
-      const { error: updateError } = await supabase
+      const { error: updateError } = await (supabase as unknown as {
+        from: (table: string) => {
+          update: (values: Record<string, unknown>) => {
+            eq: (column: string, value: string) => Promise<{ error: Error | null }>;
+          };
+        };
+      })
         .from("profiles")
         .update({
           subscription_status: "canceled",

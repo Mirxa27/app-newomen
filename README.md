@@ -1,202 +1,183 @@
-# NewMe - AI-Powered Self-Discovery Platform
+# Supabase CLI
 
-A comprehensive, production-ready platform that combines deep psychology, astrology, and artificial intelligence to help users understand themselves better and achieve personal growth.
+[![Coverage Status](https://coveralls.io/repos/github/supabase/cli/badge.svg?branch=main)](https://coveralls.io/github/supabase/cli?branch=main) [![Bitbucket Pipelines](https://img.shields.io/bitbucket/pipelines/supabase-cli/setup-cli/master?style=flat-square&label=Bitbucket%20Canary)](https://bitbucket.org/supabase-cli/setup-cli/pipelines) [![Gitlab Pipeline Status](https://img.shields.io/gitlab/pipeline-status/sweatybridge%2Fsetup-cli?label=Gitlab%20Canary)
+](https://gitlab.com/sweatybridge/setup-cli/-/pipelines)
 
-## 🌟 Features
+[Supabase](https://supabase.io) is an open source Firebase alternative. We're building the features of Firebase using enterprise-grade open source tools.
 
-### Core Features
-- **AI Companion Chat**: Intelligent conversations with personality-aware responses
-- **Balance Wheel Assessment**: Visual life balance assessment across 8 dimensions
-- **Personality Assessments**: Multiple assessment types (MBTI, Enneagram, Big Five, etc.)
-- **Daily Divinations**: Personalized daily guidance and reflection prompts
-- **Shadow Work Journeys**: 4 structured self-discovery journeys with 10 questions each
-- **Wellness Resources**: Curated articles, videos, and guides
-- **Community Features**: Posts, comments, events, and user connections
-- **Couple Challenges**: Relationship-building activities and compatibility assessments
-- **Gamification System**: Crystal currency, achievements, and progress tracking
+This repository contains all the functionality for Supabase CLI.
 
-### Advanced Features
-- **Newme Brain**: Hidden intelligence layer that learns user patterns and preferences
-- **Memory System**: Advanced memory storage with emotional tagging and pattern detection
-- **Photo Memory**: Upload and analyze photos with AI-generated insights
-- **Subscription System**: 4-tier subscription model with feature gating
-- **Admin Dashboard**: Complete platform management and analytics
-- **PWA Support**: Installable as native app with offline functionality
+- [x] Running Supabase locally
+- [x] Managing database migrations
+- [x] Creating and deploying Supabase Functions
+- [x] Generating types directly from your database schema
+- [x] Making authenticated HTTP requests to [Management API](https://supabase.com/docs/reference/api/introduction)
 
-## 📊 Project Statistics
+## Getting started
 
-- **109 TypeScript files**
-- **25 page components**
-- **9 database migrations**
-- **16,590+ lines of code**
-- **0 linting errors**
-- **Full type safety**
-- **Production-ready**
+### Install the CLI
 
-## Project Directory
-
-```
-├── README.md # Documentation
-├── components.json # Component library configuration
-├── eslint.config.js # ESLint configuration
-├── index.html # Entry file
-├── package.json # Package management
-├── postcss.config.js # PostCSS configuration
-├── public # Static resources directory
-│   ├── favicon.png # Icon
-│   └── images # Image resources
-├── src # Source code directory
-│   ├── App.tsx # Entry file
-│   ├── components # Components directory
-│   ├── context # Context directory
-│   ├── db # Database configuration directory
-│   ├── hooks # Common hooks directory
-│   ├── index.css # Global styles
-│   ├── layout # Layout directory
-│   ├── lib # Utility library directory
-│   ├── main.tsx # Entry file
-│   ├── routes.tsx # Routing configuration
-│   ├── pages # Pages directory
-│   ├── services # Database interaction directory
-│   ├── types # Type definitions directory
-├── tsconfig.app.json # TypeScript frontend configuration file
-├── tsconfig.json # TypeScript configuration file
-├── tsconfig.node.json # TypeScript Node.js configuration file
-└── vite.config.ts # Vite configuration file
-```
-
-## 🚀 Tech Stack
-
-### Frontend
-- **React 18** with TypeScript
-- **React Router v7** for routing
-- **Tailwind CSS** for styling
-- **shadcn/ui** for UI components
-- **Vite** for build tooling
-- **Lucide React** for icons
-
-### Backend
-- **Supabase** (PostgreSQL database)
-- **Supabase Auth** for authentication
-- **Supabase Storage** for file storage
-- **Supabase Edge Functions** for serverless functions
-
-## 🚀 Quick Start
-
-### Prerequisites
-- Node.js 18+ and npm
-- Supabase account
-
-### Setup Steps
-
-1. **Install dependencies**
-```bash
-npm install
-```
-
-2. **Configure environment variables**
-Create a `.env` file in the root directory:
-```env
-VITE_SUPABASE_URL=your_supabase_project_url
-VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
-VITE_APP_ID=your_app_id
-VITE_API_ENV=production
-```
-
-3. **Set up Supabase**
-- Create a new Supabase project
-- Run all 9 migrations from `supabase/migrations/` in order
-- Copy your Supabase URL and anon key to `.env`
-
-4. **Run development server**
-```bash
-npm run dev
-```
-
-The app will be available at `http://localhost:5173`
-
-## 📝 Database Migrations
-
-Run these migrations in order in your Supabase SQL editor:
-
-1. `01_initial_schema.sql` - Core tables and authentication
-2. `02_add_newme_brain.sql` - Intelligence tracking system
-3. `03_add_memory_patterns.sql` - Memory clustering and patterns
-4. `04_add_gamification.sql` - Crystals, achievements, stats
-5. `05_add_community.sql` - Community features
-6. `06_add_couple_challenge.sql` - Couple sessions
-7. `07_add_divination_schedule.sql` - Daily divination scheduling
-8. `08_add_subscription_system.sql` - Subscription tiers and billing
-9. `09_add_shadow_work_journey.sql` - Shadow work journeys
-
-## 🛠️ Development Commands
+Available via [NPM](https://www.npmjs.com) as dev dependency. To install:
 
 ```bash
-# Install dependencies
-npm install
-
-# Run development server
-npm run dev
-
-# Build for production
-npm run build
-
-# Preview production build
-npm run preview
-
-# Run linter
-npm run lint
+npm i supabase --save-dev
 ```
 
-## 📱 PWA Setup
+To install the beta release channel:
 
-The app is configured as a Progressive Web App:
-
-1. Generate PWA icons (72x72 to 512x512) and place in `public/icons/`
-2. Create screenshots for app stores and place in `public/screenshots/`
-3. The manifest and service worker are already configured
-
-## 🔐 User Roles
-
-### User
-- Access to all user-facing features
-- Feature access based on subscription tier
-- Can create content and interact with community
-
-### Admin
-- Full access to admin dashboard
-- User management
-- Content management
-- Subscription management
-- Platform analytics
-
-## 💎 Subscription Tiers
-
-1. **Free** - Basic features (3 assessments/month, basic AI chat)
-2. **Discovery** ($9.99/month) - Advanced AI insights, memory patterns
-3. **Growth** ($19.99/month) - Unlimited assessments, couple challenges
-4. **Transformation** ($49.99/month) - All features, 1-on-1 coaching
-
-## 🚀 Deployment
-
-### Build for Production
 ```bash
-npm run build
+npm i supabase@beta --save-dev
 ```
 
-### Deploy to Vercel/Netlify
-Set environment variables in your hosting platform and deploy the `dist` folder.
+When installing with yarn 4, you need to disable experimental fetch with the following nodejs config.
 
-## 📄 Documentation
+```
+NODE_OPTIONS=--no-experimental-fetch yarn add supabase
+```
 
-For detailed documentation, see:
-- `PROJECT_SUMMARY.md` - Comprehensive project overview
-- `DEVELOPMENT_PLAN.md` - Development phases and progress
+> **Note**
+For Bun versions below v1.0.17, you must add `supabase` as a [trusted dependency](https://bun.sh/guides/install/trusted) before running `bun add -D supabase`.
 
----
+<details>
+  <summary><b>macOS</b></summary>
 
-**Status**: Production Ready ✅  
-**Version**: 1.0.0  
-**Last Updated**: 2025
+  Available via [Homebrew](https://brew.sh). To install:
 
-Built with ❤️ using modern web technologies
+  ```sh
+  brew install supabase/tap/supabase
+  ```
+
+  To install the beta release channel:
+  
+  ```sh
+  brew install supabase/tap/supabase-beta
+  brew link --overwrite supabase-beta
+  ```
+  
+  To upgrade:
+
+  ```sh
+  brew upgrade supabase
+  ```
+</details>
+
+<details>
+  <summary><b>Windows</b></summary>
+
+  Available via [Scoop](https://scoop.sh). To install:
+
+  ```powershell
+  scoop bucket add supabase https://github.com/supabase/scoop-bucket.git
+  scoop install supabase
+  ```
+
+  To upgrade:
+
+  ```powershell
+  scoop update supabase
+  ```
+</details>
+
+<details>
+  <summary><b>Linux</b></summary>
+
+  Available via [Homebrew](https://brew.sh) and Linux packages.
+
+  #### via Homebrew
+
+  To install:
+
+  ```sh
+  brew install supabase/tap/supabase
+  ```
+
+  To upgrade:
+
+  ```sh
+  brew upgrade supabase
+  ```
+
+  #### via Linux packages
+
+  Linux packages are provided in [Releases](https://github.com/supabase/cli/releases). To install, download the `.apk`/`.deb`/`.rpm`/`.pkg.tar.zst` file depending on your package manager and run the respective commands.
+
+  ```sh
+  sudo apk add --allow-untrusted <...>.apk
+  ```
+
+  ```sh
+  sudo dpkg -i <...>.deb
+  ```
+
+  ```sh
+  sudo rpm -i <...>.rpm
+  ```
+
+  ```sh
+  sudo pacman -U <...>.pkg.tar.zst
+  ```
+</details>
+
+<details>
+  <summary><b>Other Platforms</b></summary>
+
+  You can also install the CLI via [go modules](https://go.dev/ref/mod#go-install) without the help of package managers.
+
+  ```sh
+  go install github.com/supabase/cli@latest
+  ```
+
+  Add a symlink to the binary in `$PATH` for easier access:
+
+  ```sh
+  ln -s "$(go env GOPATH)/bin/cli" /usr/bin/supabase
+  ```
+
+  This works on other non-standard Linux distros.
+</details>
+
+<details>
+  <summary><b>Community Maintained Packages</b></summary>
+
+  Available via [pkgx](https://pkgx.sh/). Package script [here](https://github.com/pkgxdev/pantry/blob/main/projects/supabase.com/cli/package.yml).
+  To install in your working directory:
+
+  ```bash
+  pkgx install supabase
+  ```
+
+  Available via [Nixpkgs](https://nixos.org/). Package script [here](https://github.com/NixOS/nixpkgs/blob/master/pkgs/development/tools/supabase-cli/default.nix).
+</details>
+
+### Run the CLI
+
+```bash
+supabase bootstrap
+```
+
+Or using npx:
+
+```bash
+npx supabase bootstrap
+```
+
+The bootstrap command will guide you through the process of setting up a Supabase project using one of the [starter](https://github.com/supabase-community/supabase-samples/blob/main/samples.json) templates.
+
+## Docs
+
+Command & config reference can be found [here](https://supabase.com/docs/reference/cli/about).
+
+## Breaking changes
+
+We follow semantic versioning for changes that directly impact CLI commands, flags, and configurations.
+
+However, due to dependencies on other service images, we cannot guarantee that schema migrations, seed.sql, and generated types will always work for the same CLI major version. If you need such guarantees, we encourage you to pin a specific version of CLI in package.json.
+
+## Developing
+
+To run from source:
+
+```sh
+# Go >= 1.22
+go run . help
+```

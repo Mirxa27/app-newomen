@@ -11,7 +11,6 @@ import type {
   UserFavorite,
   CommunityPost,
   PostComment,
-  PostLike,
   CommunityEvent,
   EventParticipant,
   UserConnection,
@@ -22,12 +21,10 @@ import type {
   BalanceWheelData,
   DivinationQuestion,
   UserDivinationResponse,
-  DailyDivinationSchedule,
   DivinationQuestionWithResponse,
   UserStats,
   CrystalTransaction,
   Achievement,
-  UserAchievement,
   AchievementWithDetails,
   MemoryPattern,
   MemoryCluster,
@@ -56,6 +53,13 @@ import type {
   AiFunctionConfigWithRelations,
   AiInteractionLogWithRelations,
   SupervisorReportWithRelations,
+  RealtimeConfig,
+  RealtimeConfigCreate,
+  ABExperiment,
+  ABVariant,
+  ABAssignment,
+  ABResult,
+  ABExperimentWithVariants,
 } from '@/types/types';
 
 export const db = {
@@ -124,7 +128,7 @@ export const db = {
     },
 
     async updateBalanceWheel(userId: string, wheelData: BalanceWheelData): Promise<Profile> {
-      return this.update(userId, { balance_wheel_data: wheelData });
+      return this.update(userId, { balance_wheel_data: wheelData as unknown as Record<string, unknown> });
     },
 
     async completeOnboarding(userId: string): Promise<Profile> {
@@ -299,12 +303,37 @@ export const db = {
       return Array.isArray(data) ? data : [];
     },
 
+    async listVisitorAccessible(): Promise<Assessment[]> {
+      const { data, error } = await supabase
+        .from('assessments')
+        .select('*')
+        .eq('is_active', true)
+        .eq('is_visitor_accessible', true)
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      return Array.isArray(data) ? data : [];
+    },
+
     async getById(id: string): Promise<Assessment | null> {
       const { data, error } = await supabase
         .from('assessments')
         .select('*')
         .eq('id', id)
         .eq('is_active', true)
+        .maybeSingle();
+      
+      if (error) throw error;
+      return data;
+    },
+
+    async getByIdPublic(id: string): Promise<Assessment | null> {
+      const { data, error } = await supabase
+        .from('assessments')
+        .select('*')
+        .eq('id', id)
+        .eq('is_active', true)
+        .eq('is_visitor_accessible', true)
         .maybeSingle();
       
       if (error) throw error;
@@ -407,6 +436,9 @@ export const db = {
   coupleSessions: {
     async create(hostUserId: string): Promise<CoupleSession> {
       const sessionCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+      // Session expires in 24 hours
+      const expiresAt = new Date();
+      expiresAt.setHours(expiresAt.getHours() + 24);
       
       const { data, error } = await supabase
         .from('couple_sessions')
@@ -414,6 +446,7 @@ export const db = {
           session_code: sessionCode,
           host_user_id: hostUserId,
           status: 'waiting',
+          expires_at: expiresAt.toISOString(),
         })
         .select()
         .maybeSingle();
@@ -1299,7 +1332,7 @@ export const db = {
           .eq('user_id', userId)
           .maybeSingle();
 
-        const currentValue = stats ? (stats[statName] as number) : 0;
+        const currentValue = stats ? (stats[statName as keyof typeof stats] as number) : 0;
 
         await supabase
           .from('user_stats')
@@ -1491,6 +1524,16 @@ export const db = {
         .from('subscription_history')
         .select('*')
         .eq('user_id', userId)
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      return Array.isArray(data) ? data : [];
+    },
+
+    async listAll(): Promise<SubscriptionHistory[]> {
+      const { data, error } = await supabase
+        .from('subscription_history')
+        .select('*')
         .order('created_at', { ascending: false });
       
       if (error) throw error;
@@ -1715,11 +1758,28 @@ export const db = {
       });
 
       if (error) {
-        const errorMsg = await error?.context?.text();
-        throw new Error(errorMsg || 'Failed to test connection');
+        // Handle different error formats
+        let errorMsg = 'Failed to test connection';
+        if (typeof error === 'string') {
+          errorMsg = error;
+        } else if (error?.message) {
+          errorMsg = error.message;
+        } else if (error?.context) {
+          // Try to extract error message from context
+          try {
+            if (typeof error.context === 'string') {
+              errorMsg = error.context;
+            } else if (error.context?.message) {
+              errorMsg = error.context.message;
+            }
+          } catch (e) {
+            // Ignore parsing errors
+          }
+        }
+        throw new Error(errorMsg);
       }
 
-      return data;
+      return data || { success: false, message: 'No response from server' };
     },
 
     async fetchModels(id: string): Promise<AiModel[]> {
@@ -1727,12 +1787,63 @@ export const db = {
         body: { provider_id: id },
       });
 
-      if (error) {
-        const errorMsg = await error?.context?.text();
-        throw new Error(errorMsg || 'Failed to fetch models');
+      // Check if data contains error message (even if error object exists)
+      if (data?.error || data?.message) {
+        const errorMsg = data.error || data.message || 'Failed to fetch models';
+        throw new Error(errorMsg);
       }
 
-      return data.models || [];
+      if (error) {
+        // Handle different error formats
+        let errorMsg = 'Failed to fetch models';
+        
+        // Try to extract error from response body
+        try {
+          // Check if error has a response property (FunctionsHttpError)
+          if (error?.context?.response) {
+            const response = error.context.response;
+            if (typeof response.text === 'function') {
+              const text = await response.text();
+              try {
+                const parsed = JSON.parse(text);
+                errorMsg = parsed.error || parsed.message || errorMsg;
+              } catch (e) {
+                // If not JSON, use the text as error message
+                if (text) errorMsg = text;
+              }
+            }
+          }
+          // Check if error.context is a Response object directly
+          else if (error?.context && typeof error.context.text === 'function') {
+            const text = await error.context.text();
+            try {
+              const parsed = JSON.parse(text);
+              errorMsg = parsed.error || parsed.message || errorMsg;
+            } catch (e) {
+              if (text) errorMsg = text;
+            }
+          }
+          // Fallback to error message
+          else if (error?.message) {
+            errorMsg = error.message;
+          }
+          // Check error.context.message
+          else if (error?.context?.message) {
+            errorMsg = error.context.message;
+          }
+          // Check if error is a string
+          else if (typeof error === 'string') {
+            errorMsg = error;
+          }
+        } catch (e) {
+          // If all extraction fails, use default or error.message
+          errorMsg = error?.message || 'Failed to fetch models';
+        }
+        
+        throw new Error(errorMsg);
+      }
+
+      return data?.models || [];
     },
 
     async fetchVoices(id: string): Promise<AiVoice[]> {
@@ -1740,12 +1851,43 @@ export const db = {
         body: { provider_id: id },
       });
 
-      if (error) {
-        const errorMsg = await error?.context?.text();
-        throw new Error(errorMsg || 'Failed to fetch voices');
+      // Check if data contains error message (even if error object exists)
+      if (data?.error || data?.message) {
+        const errorMsg = data.error || data.message || 'Failed to fetch voices';
+        throw new Error(errorMsg);
       }
 
-      return data.voices || [];
+      if (error) {
+        // Handle different error formats
+        let errorMsg = 'Failed to fetch voices';
+        if (typeof error === 'string') {
+          errorMsg = error;
+        } else if (error?.message) {
+          errorMsg = error.message;
+        } else if (error?.context) {
+          try {
+            if (typeof error.context === 'string') {
+              errorMsg = error.context;
+            } else if (error.context?.message) {
+              errorMsg = error.context.message;
+            } else if (typeof error.context?.text === 'function') {
+              // Try to read response body
+              try {
+                const text = await error.context.text();
+                const parsed = JSON.parse(text);
+                errorMsg = parsed.error || parsed.message || errorMsg;
+              } catch (e) {
+                // Ignore parsing errors
+              }
+            }
+          } catch (e) {
+            // Ignore parsing errors
+          }
+        }
+        throw new Error(errorMsg);
+      }
+
+      return data?.voices || [];
     },
   },
 
@@ -2077,7 +2219,7 @@ export const db = {
   aiMgmtProviders: {
     async list(): Promise<AiProvider[]> {
       const { data, error } = await supabase
-        .from('ai_providers')
+        .from('ai_mgmt_providers')
         .select('*')
         .order('name', { ascending: true });
 
@@ -2087,7 +2229,7 @@ export const db = {
 
     async getById(id: string): Promise<AiProvider | null> {
       const { data, error } = await supabase
-        .from('ai_providers')
+        .from('ai_mgmt_providers')
         .select('*')
         .eq('id', id)
         .maybeSingle();
@@ -2098,7 +2240,7 @@ export const db = {
 
     async create(provider: Omit<AiProvider, 'id' | 'created_at' | 'updated_at'>): Promise<AiProvider> {
       const { data, error } = await supabase
-        .from('ai_providers')
+        .from('ai_mgmt_providers')
         .insert(provider)
         .select()
         .maybeSingle();
@@ -2110,7 +2252,7 @@ export const db = {
 
     async update(id: string, updates: Partial<AiProvider>): Promise<AiProvider> {
       const { data, error } = await supabase
-        .from('ai_providers')
+        .from('ai_mgmt_providers')
         .update({ ...updates, updated_at: new Date().toISOString() })
         .eq('id', id)
         .select()
@@ -2123,7 +2265,7 @@ export const db = {
 
     async delete(id: string): Promise<void> {
       const { error } = await supabase
-        .from('ai_providers')
+        .from('ai_mgmt_providers')
         .delete()
         .eq('id', id);
 
@@ -2135,7 +2277,7 @@ export const db = {
     async list(): Promise<AiModelWithProvider[]> {
       const { data, error } = await supabase
         .from('ai_mgmt_models')
-        .select('*, provider:ai_providers(*)')
+        .select('*, provider:ai_mgmt_providers(*)')
         .order('display_name', { ascending: true });
 
       if (error) throw error;
@@ -2274,7 +2416,7 @@ export const db = {
         .select(`
           *,
           function:ai_functions(*),
-          provider:ai_providers(*),
+          provider:ai_mgmt_providers(*),
           model:ai_models(*)
         `)
         .order('created_at', { ascending: false });
@@ -2289,7 +2431,7 @@ export const db = {
         .select(`
           *,
           function:ai_functions(*),
-          provider:ai_providers(*),
+          provider:ai_mgmt_providers(*),
           model:ai_models(*)
         `)
         .eq('function_id', functionId)
@@ -2305,7 +2447,7 @@ export const db = {
         .select(`
           *,
           function:ai_functions!inner(*),
-          provider:ai_providers(*),
+          provider:ai_mgmt_providers(*),
           model:ai_models(*)
         `)
         .eq('function:ai_functions.function_key', functionKey)
@@ -2387,7 +2529,7 @@ export const db = {
         .select(`
           *,
           function:ai_functions(*),
-          provider:ai_providers(*),
+          provider:ai_mgmt_providers(*),
           model:ai_models(*),
           user:profiles(id, nickname, email)
         `)
@@ -2608,6 +2750,259 @@ export const db = {
         dismissed,
         bySeverity,
       };
+    },
+  },
+
+  realtimeConfig: {
+    async list(): Promise<RealtimeConfig[]> {
+      const { data, error } = await supabase
+        .from('realtime_config')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return Array.isArray(data) ? data : [];
+    },
+
+    async getById(id: string): Promise<RealtimeConfig | null> {
+      const { data, error } = await supabase
+        .from('realtime_config')
+        .select('*')
+        .eq('id', id)
+        .maybeSingle();
+
+      if (error) throw error;
+      return data;
+    },
+
+    async getActive(configType: 'realtime' | 'transcription'): Promise<RealtimeConfig | null> {
+      const { data, error } = await supabase
+        .rpc('get_active_realtime_config', { p_config_type: configType });
+
+      if (error) throw error;
+      if (!data || data.length === 0) return null;
+      return data[0] as RealtimeConfig;
+    },
+
+    async create(config: RealtimeConfigCreate): Promise<RealtimeConfig> {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      const { data, error } = await supabase
+        .from('realtime_config')
+        .insert({
+          ...config,
+          created_by: user?.id || null,
+        })
+        .select()
+        .maybeSingle();
+
+      if (error) throw error;
+      if (!data) throw new Error('Failed to create realtime config');
+      return data;
+    },
+
+    async update(id: string, updates: Partial<RealtimeConfigCreate>): Promise<RealtimeConfig> {
+      const { data, error } = await supabase
+        .from('realtime_config')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .maybeSingle();
+
+      if (error) throw error;
+      if (!data) throw new Error('Realtime config not found');
+      return data;
+    },
+
+    async delete(id: string): Promise<void> {
+      const { error } = await supabase
+        .from('realtime_config')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+    },
+
+    async setActive(id: string, configType: 'realtime' | 'transcription'): Promise<void> {
+      // First, deactivate all configs of this type
+      const { error: deactivateError } = await supabase
+        .from('realtime_config')
+        .update({ is_active: false })
+        .eq('config_type', configType);
+
+      if (deactivateError) throw deactivateError;
+
+      // Then activate the selected config
+      const { error: activateError } = await supabase
+        .from('realtime_config')
+        .update({ is_active: true })
+        .eq('id', id);
+
+      if (activateError) throw activateError;
+    },
+  },
+
+  abTesting: {
+    async listExperiments(): Promise<ABExperiment[]> {
+      const { data, error } = await supabase
+        .from('ab_experiments')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return Array.isArray(data) ? data : [];
+    },
+
+    async getExperiment(id: string): Promise<ABExperimentWithVariants | null> {
+      const { data: experiment, error: expError } = await supabase
+        .from('ab_experiments')
+        .select('*')
+        .eq('id', id)
+        .maybeSingle();
+
+      if (expError) throw expError;
+      if (!experiment) return null;
+
+      const { data: variants, error: varError } = await supabase
+        .from('ab_variants')
+        .select(`
+          *,
+          function_config:ai_mgmt_function_configs(
+            *,
+            provider:api_providers(*),
+            model:ai_models(*)
+          )
+        `)
+        .eq('experiment_id', id)
+        .order('variant_name', { ascending: true });
+
+      if (varError) throw varError;
+
+      const { data: results, error: resError } = await supabase
+        .from('ab_results')
+        .select('*')
+        .eq('experiment_id', id);
+
+      if (resError) throw resError;
+
+      return {
+        ...experiment,
+        variants: (variants || []).map((v) => ({
+          ...v,
+          function_config: v.function_config as any,
+          results: results?.find((r) => r.variant_id === v.id),
+        })),
+        results: results || [],
+      };
+    },
+
+    async createExperiment(experiment: Omit<ABExperiment, 'id' | 'created_at' | 'updated_at'>): Promise<ABExperiment> {
+      const { data, error } = await supabase
+        .from('ab_experiments')
+        .insert(experiment)
+        .select()
+        .maybeSingle();
+
+      if (error) throw error;
+      if (!data) throw new Error('Failed to create experiment');
+      return data;
+    },
+
+    async updateExperiment(id: string, updates: Partial<ABExperiment>): Promise<ABExperiment> {
+      const { data, error } = await supabase
+        .from('ab_experiments')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .maybeSingle();
+
+      if (error) throw error;
+      if (!data) throw new Error('Experiment not found');
+      return data;
+    },
+
+    async deleteExperiment(id: string): Promise<void> {
+      const { error } = await supabase
+        .from('ab_experiments')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+    },
+
+    async createVariant(variant: Omit<ABVariant, 'id' | 'created_at'>): Promise<ABVariant> {
+      const { data, error } = await supabase
+        .from('ab_variants')
+        .insert(variant)
+        .select()
+        .maybeSingle();
+
+      if (error) throw error;
+      if (!data) throw new Error('Failed to create variant');
+      return data;
+    },
+
+    async updateVariant(id: string, updates: Partial<ABVariant>): Promise<ABVariant> {
+      const { data, error } = await supabase
+        .from('ab_variants')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .maybeSingle();
+
+      if (error) throw error;
+      if (!data) throw new Error('Variant not found');
+      return data;
+    },
+
+    async deleteVariant(id: string): Promise<void> {
+      const { error } = await supabase
+        .from('ab_variants')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+    },
+
+    async getResults(experimentId: string): Promise<ABResult[]> {
+      const { data, error } = await supabase
+        .from('ab_results')
+        .select('*')
+        .eq('experiment_id', experimentId)
+        .order('calculated_at', { ascending: false });
+
+      if (error) throw error;
+      return Array.isArray(data) ? data : [];
+    },
+
+    async calculateResults(experimentId: string): Promise<void> {
+      const { error } = await supabase.rpc('calculate_experiment_results', {
+        p_experiment_id: experimentId,
+      });
+
+      if (error) throw error;
+    },
+
+    async assignUser(experimentId: string, userId: string): Promise<string> {
+      const { data, error } = await supabase.rpc('assign_user_to_variant', {
+        p_experiment_id: experimentId,
+        p_user_id: userId,
+      });
+
+      if (error) throw error;
+      return data || '';
+    },
+
+    async getUserAssignment(experimentId: string, userId: string): Promise<ABAssignment | null> {
+      const { data, error } = await supabase
+        .from('ab_assignments')
+        .select('*')
+        .eq('experiment_id', experimentId)
+        .eq('user_id', userId)
+        .maybeSingle();
+
+      if (error) throw error;
+      return data;
     },
   },
 };

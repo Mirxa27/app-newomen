@@ -7,10 +7,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { User, LogOut, Upload, Save, Brain } from 'lucide-react';
+import { LogOut, Upload, Save, Brain, Sparkles } from 'lucide-react';
 import { db } from '@/db/api';
 import { toast } from 'sonner';
 import MemoryTimeline from '@/components/memory/MemoryTimeline';
+import { calculateAstrologyChart, formatZodiacSign, getZodiacElementEmoji, getZodiacTraits } from '@/lib/astrology';
 
 export default function Profile() {
   const { profile, signOut, refreshProfile } = useAuth();
@@ -24,18 +25,64 @@ export default function Profile() {
   const handleSave = async () => {
     if (!profile) return;
 
+    // Validation
+    if (!nickname.trim()) {
+      toast.error('Nickname is required');
+      return;
+    }
+
+    if (nickname.length > 50) {
+      toast.error('Nickname must be less than 50 characters');
+      return;
+    }
+
+    if (birthDate) {
+      const birthDateObj = new Date(birthDate);
+      const today = new Date();
+      if (birthDateObj > today) {
+        toast.error('Birth date cannot be in the future');
+        return;
+      }
+      if (birthDateObj < new Date('1900-01-01')) {
+        toast.error('Birth date must be after 1900');
+        return;
+      }
+    }
+
     try {
       setSaving(true);
-      await db.profiles.update(profile.id, {
-        nickname,
+      
+      const updates: Record<string, unknown> = {
+        nickname: nickname.trim(),
         birth_date: birthDate || null,
-        birth_location: birthLocation || null,
-      });
+        birth_location: birthLocation?.trim() || null,
+      };
+
+      // Calculate zodiac signs if birth date is provided
+      if (birthDate) {
+        try {
+          const astrologyChart = calculateAstrologyChart({
+            birthDate,
+            birthTime: profile.birth_time || undefined,
+            birthLocation: birthLocation || undefined,
+          });
+
+          updates.sun_sign = astrologyChart.sunSign;
+          updates.moon_sign = astrologyChart.moonSign;
+          updates.rising_sign = astrologyChart.risingSign;
+        } catch (error) {
+          console.error('Error calculating astrology chart:', error);
+          // Don't fail the entire save if astrology calculation fails
+        }
+      }
+
+      await db.profiles.update(profile.id, updates);
       await refreshProfile();
       toast.success('Profile updated successfully');
     } catch (error) {
       console.error('Error updating profile:', error);
-      toast.error('Failed to update profile');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to update profile';
+      toast.error(errorMessage);
     } finally {
       setSaving(false);
     }
@@ -177,7 +224,10 @@ export default function Profile() {
 
         <Card className="glass-card mt-6">
           <CardHeader>
-            <CardTitle>Astrology Profile</CardTitle>
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-primary" />
+              <CardTitle>Astrology Profile</CardTitle>
+            </div>
             <CardDescription>
               Your cosmic blueprint
             </CardDescription>
@@ -187,24 +237,54 @@ export default function Profile() {
               <div className="p-4 bg-muted rounded-lg">
                 <p className="text-sm text-muted-foreground mb-1">Sun Sign</p>
                 <p className="text-lg font-semibold">
-                  {profile.sun_sign || 'Not set'}
+                  {profile.sun_sign ? formatZodiacSign(profile.sun_sign) : 'Not set'}
                 </p>
+                {profile.sun_sign && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {getZodiacElementEmoji(getZodiacTraits(profile.sun_sign).element)} {getZodiacTraits(profile.sun_sign).element}
+                  </p>
+                )}
               </div>
               <div className="p-4 bg-muted rounded-lg">
                 <p className="text-sm text-muted-foreground mb-1">Moon Sign</p>
                 <p className="text-lg font-semibold">
-                  {profile.moon_sign || 'Not set'}
+                  {profile.moon_sign ? formatZodiacSign(profile.moon_sign) : 'Not set'}
                 </p>
+                {profile.moon_sign && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {getZodiacElementEmoji(getZodiacTraits(profile.moon_sign).element)} {getZodiacTraits(profile.moon_sign).element}
+                  </p>
+                )}
               </div>
               <div className="p-4 bg-muted rounded-lg">
                 <p className="text-sm text-muted-foreground mb-1">Rising Sign</p>
                 <p className="text-lg font-semibold">
-                  {profile.rising_sign || 'Not set'}
+                  {profile.rising_sign ? formatZodiacSign(profile.rising_sign) : 'Not set'}
                 </p>
+                {profile.rising_sign && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {getZodiacElementEmoji(getZodiacTraits(profile.rising_sign).element)} {getZodiacTraits(profile.rising_sign).element}
+                  </p>
+                )}
               </div>
             </div>
+            {profile.sun_sign && (
+              <div className="mt-4 p-4 bg-primary/5 rounded-lg">
+                <p className="text-sm font-medium mb-2">Your Sun Sign Traits</p>
+                <div className="flex flex-wrap gap-1">
+                  {getZodiacTraits(profile.sun_sign).traits.slice(0, 4).map((trait, index) => (
+                    <span key={index} className="text-xs bg-primary/10 text-primary px-2 py-1 rounded">
+                      {trait}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
             <p className="text-sm text-muted-foreground mt-4">
-              Complete your birth information to calculate your full astrology chart
+              {profile.birth_date 
+                ? 'Your astrology chart is calculated based on your birth information'
+                : 'Complete your birth information to calculate your full astrology chart'
+              }
             </p>
           </CardContent>
         </Card>

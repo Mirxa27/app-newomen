@@ -93,15 +93,16 @@ export function PhotoUpload({ onPhotoUploaded, disabled }: PhotoUploadProps) {
           <img
             src={preview}
             alt="Preview"
-            className="h-20 w-20 rounded-lg object-cover border-2 border-primary"
+            className="h-16 w-16 sm:h-20 sm:w-20 rounded-lg object-cover border-2 border-primary"
           />
           <Button
             size="icon"
             variant="destructive"
-            className="absolute -top-2 -right-2 h-6 w-6 rounded-full"
+            className="absolute -top-2 -right-2 h-7 w-7 sm:h-6 sm:w-6 rounded-full touch-manipulation"
             onClick={handleClearPreview}
+            aria-label="Remove photo"
           >
-            <X className="h-3 w-3" />
+            <X className="h-3.5 w-3.5 sm:h-3 sm:w-3" />
           </Button>
         </div>
       ) : (
@@ -110,11 +111,13 @@ export function PhotoUpload({ onPhotoUploaded, disabled }: PhotoUploadProps) {
           disabled={disabled || uploading}
           size="icon"
           variant="outline"
+          className="h-[52px] w-[52px] sm:h-10 sm:w-10 touch-manipulation"
+          aria-label="Upload photo"
         >
           {uploading ? (
-            <Loader2 className="h-5 w-5 animate-spin" />
+            <Loader2 className="h-4 w-4 sm:h-5 sm:w-5 animate-spin" />
           ) : (
-            <ImageIcon className="h-5 w-5" />
+            <ImageIcon className="h-4 w-4 sm:h-5 sm:w-5" />
           )}
         </Button>
       )}

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router';
 import { useAuth } from '@/contexts/AuthContext';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
@@ -30,8 +30,9 @@ interface Answer {
 
 export default function AssessmentTake() {
   const { id } = useParams<{ id: string }>();
-  const { profile } = useAuth();
+  const { user, profile } = useAuth();
   const navigate = useNavigate();
+  const isVisitor = !user;
   const [assessment, setAssessment] = useState<Assessment | null>(null);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -49,14 +50,29 @@ export default function AssessmentTake() {
     if (!id) return;
 
     try {
-      const data = await db.assessments.getById(id);
+      // Try fetching as visitor-accessible first, then authenticated
+      let data: Assessment | null = null;
+      
+      if (isVisitor) {
+        data = await db.assessments.getByIdPublic(id);
+      } else {
+        data = await db.assessments.getById(id);
+      }
+
       if (!data) {
         toast.error('Assessment not found');
         navigate('/assessments');
         return;
       }
 
-      if (!data.is_free && !profile) {
+      // Check access permissions
+      if (isVisitor && !data.is_visitor_accessible) {
+        toast.error('Please sign in to access this assessment');
+        navigate('/login');
+        return;
+      }
+
+      if (!data.is_visitor_accessible && !data.is_free && !profile) {
         toast.error('Please sign in to access this assessment');
         navigate('/login');
         return;
@@ -64,8 +80,8 @@ export default function AssessmentTake() {
 
       setAssessment(data);
       
-      // Track assessment start (Newme Brain)
-      if (profile) {
+      // Track assessment start (Newme Brain) - only for authenticated users
+      if (profile && !isVisitor) {
         db.newmeBrain.trackBehavior(profile.id, 'assessment_started', {
           assessment_id: data.id,
           assessment_category: data.category,
@@ -354,7 +370,7 @@ export default function AssessmentTake() {
   };
 
   const handleSubmit = async () => {
-    if (!assessment || !profile) return;
+    if (!assessment) return;
 
     if (answers.length < questions.length) {
       toast.error('Please answer all questions before submitting');
@@ -364,12 +380,14 @@ export default function AssessmentTake() {
     try {
       setSubmitting(true);
       
-      // Track assessment completion (Newme Brain)
-      await db.newmeBrain.trackBehavior(profile.id, 'assessment_completed', {
-        assessment_id: assessment.id,
-        assessment_category: assessment.category,
-        questions_count: questions.length,
-      });
+      // Track assessment completion (Newme Brain) - only for authenticated users
+      if (profile && !isVisitor) {
+        await db.newmeBrain.trackBehavior(profile.id, 'assessment_completed', {
+          assessment_id: assessment.id,
+          assessment_category: assessment.category,
+          questions_count: questions.length,
+        });
+      }
       
       // Call Edge Function to generate AI insights
       const { data: functionData, error: functionError } = await supabase.functions.invoke(
@@ -378,7 +396,7 @@ export default function AssessmentTake() {
           body: {
             category: assessment.category,
             assessmentTitle: assessment.title,
-            answers: answers.map((a, i) => ({
+            answers: answers.map((a) => ({
               questionId: a.question_id,
               questionText: questions.find(q => q.id === a.question_id)?.text || '',
               answer: a.answer,
@@ -396,7 +414,7 @@ export default function AssessmentTake() {
           errorMsg = functionError.message;
         } else if (functionError.context) {
           try {
-            const contextText = typeof functionError.context.text === 'function' 
+            const contextText = typeof functionError.context.text === 'function'
               ? await functionError.context.text()
               : functionError.context.toString();
             errorMsg = contextText || errorMsg;
@@ -417,23 +435,44 @@ export default function AssessmentTake() {
 
       const insights = functionData.insights;
       
-      // Save assessment results to database
-      try {
-        await db.userAssessments.create({
-          user_id: profile.id,
+      // Different storage strategy for visitors vs authenticated users
+      if (isVisitor) {
+        // Store result in localStorage for visitors
+        const visitorResult = {
           assessment_id: assessment.id,
-          responses: answers as unknown,
-          ai_insights: (typeof insights === 'string' ? insights : JSON.stringify(insights)) as unknown,
+          assessment_title: assessment.title,
+          assessment_category: assessment.category,
+          responses: answers,
+          ai_insights: typeof insights === 'string' ? insights : JSON.stringify(insights),
+          completed_at: new Date().toISOString(),
           score_data: {},
-        });
-      } catch (dbError) {
-        console.error('Database error saving assessment:', dbError);
-        toast.error('Failed to save assessment results. Please try again.');
-        return;
-      }
+        };
+        
+        localStorage.setItem(`assessment_result_${assessment.id}`, JSON.stringify(visitorResult));
+        
+        toast.success('Assessment completed! Sign up to save your results permanently.');
+        
+        // Navigate to results page with visitor mode
+        navigate(`/assessment/${assessment.id}/results?visitor=true`);
+      } else {
+        // Save assessment results to database for authenticated users
+        try {
+          await db.userAssessments.create({
+            user_id: profile!.id,
+            assessment_id: assessment.id,
+            responses: answers as unknown,
+            ai_insights: (typeof insights === 'string' ? insights : JSON.stringify(insights)) as unknown,
+            score_data: {},
+          });
+        } catch (dbError) {
+          console.error('Database error saving assessment:', dbError);
+          toast.error('Failed to save assessment results. Please try again.');
+          return;
+        }
 
-      toast.success('Assessment completed successfully!');
-      navigate(`/assessment/${assessment.id}/results`);
+        toast.success('Assessment completed successfully!');
+        navigate(`/assessment/${assessment.id}/results`);
+      }
     } catch (error) {
       console.error('Error submitting assessment:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to submit assessment. Please try again.';
@@ -528,7 +567,7 @@ export default function AssessmentTake() {
                 >
                   {Array.from(
                     { length: (currentQuestion.scale_max || 10) - (currentQuestion.scale_min || 1) + 1 },
-                    (_, i) => (currentQuestion.scale_min || 1) + i
+                    (_, index) => (currentQuestion.scale_min || 1) + index
                   ).map((num) => (
                     <div key={num} className="flex flex-col items-center gap-2">
                       <RadioGroupItem value={num.toString()} id={`scale-${num}`} />

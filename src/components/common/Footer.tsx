@@ -9,49 +9,44 @@ const Footer: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {/* ================= About Us ================= */}
           <div>
-            {/* Title: Change to your project's "About Us" */}
             <h3 className="text-lg font-semibold text-amber-800 mb-4">
-              {/* About Us */}
+              About Newomen
             </h3>
             <p className="text-gray-600">
-              {/* Fill in your "About Us" introduction here, for example: Committed to xxx, making xxx more xxx */}
+              Your AI-powered companion for self-discovery, personal growth, and transformative conversations. 
+              Discover yourself through assessments, shadow work, and meaningful connections.
             </p>
           </div>
 
           {/* ================= Contact Information ================= */}
           <div>
-            {/* Title: Contact Information */}
             <h3 className="text-lg font-semibold text-amber-800 mb-4">
-              {/* Contact Information */}
+              Connect With Us
             </h3>
             <div className="text-gray-600 space-y-2">
               <p>
-                {/* Address: XXX Street, XXX District, XXX City, XXX Province */}
+                Join our community to share your journey
               </p>
               <p>
-                {/* Phone: 010-XXXXXXX */}
-              </p>
-              <p>
-                {/* Email: info@example.com */}
+                Support available through the app
               </p>
             </div>
           </div>
 
-          {/* ================= Business Hours / Other Information / Can be deleted ================= */}
+          {/* ================= Resources ================= */}
           <div>
-            {/* Title: Can be changed to "Business Hours" or "Service Hours" */}
             <h3 className="text-lg font-semibold text-amber-800 mb-4">
-              {/* Business Hours */}
+              Resources
             </h3>
             <div className="text-gray-600 space-y-2">
               <p>
-                {/* Monday to Friday: 9:00-18:00 */}
+                Wellness Library
               </p>
               <p>
-                {/* Please check announcements for weekends and public holidays */}
+                Community Events
               </p>
               <p>
-                {/* Other notes, such as "Advance booking required" */}
+                Shadow Work Journeys
               </p>
             </div>
           </div>
@@ -60,7 +55,7 @@ const Footer: React.FC = () => {
         {/* ================= Copyright Section ================= */}
         <div className="mt-8 pt-8 border-t border-amber-200 text-center text-gray-600">
           <p>
-            {/* © {currentYear} Your Company or Organization Name */}
+            © {currentYear} Newomen. All rights reserved.
           </p>
         </div>
       </div>

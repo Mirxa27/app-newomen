@@ -56,10 +56,49 @@ export default function AiVoices() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Validation
+    if (!formData.provider_id) {
+      toast.error('Provider is required');
+      return;
+    }
+
+    if (!formData.voice_id?.trim()) {
+      toast.error('Voice ID is required');
+      return;
+    }
+
+    if (!formData.voice_name?.trim()) {
+      toast.error('Voice name is required');
+      return;
+    }
+
+    if (!formData.language?.trim()) {
+      toast.error('Language is required');
+      return;
+    }
+
+    // Validate JSON parameters
+    let parsedParameters: Record<string, unknown>;
+    try {
+      parsedParameters = JSON.parse(formData.parameters);
+      if (typeof parsedParameters !== 'object' || Array.isArray(parsedParameters)) {
+        throw new Error('Parameters must be a valid JSON object');
+      }
+    } catch (error) {
+      toast.error('Invalid JSON format for parameters');
+      return;
+    }
+
+    // Validate sample_url if provided
+    if (formData.sample_url && !formData.sample_url.match(/^https?:\/\/.+/)) {
+      toast.error('Sample URL must be a valid HTTP/HTTPS URL');
+      return;
+    }
+
     try {
       const voiceData = {
         ...formData,
-        parameters: JSON.parse(formData.parameters),
+        parameters: parsedParameters,
         gender: formData.gender || null,
         accent: formData.accent || null,
         sample_url: formData.sample_url || null,
@@ -78,7 +117,8 @@ export default function AiVoices() {
       loadData();
     } catch (error) {
       console.error('Error saving voice:', error);
-      toast.error('Failed to save voice');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to save voice';
+      toast.error(errorMessage);
     }
   };
 

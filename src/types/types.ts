@@ -65,8 +65,11 @@ export interface Assessment {
   id: string;
   title: string;
   description: string | null;
-  category: 'personality' | 'relationships' | 'career' | 'wellness' | 'astrology';
+  category: 'personality' | 'relationships' | 'career' | 'wellness' | 'astrology' | 'emotional' | 'spiritual';
   is_free: boolean;
+  is_visitor_accessible?: boolean;
+  requires_auth?: boolean;
+  duration_minutes?: number | null;
   questions: unknown[];
   ai_prompt_template: string | null;
   created_by: string | null;
@@ -676,5 +679,133 @@ export interface SupervisorReportWithRelations extends SupervisorReport {
   interaction: AiInteractionLog;
   function: AiFunction | null;
   reviewed_by_profile: Profile | null;
+}
+
+// OpenAI Realtime & Transcription Configuration Types
+export interface RealtimeConfig {
+  id: string;
+  config_name: string;
+  config_type: 'realtime' | 'transcription';
+  is_active: boolean;
+  model: string;
+  instructions: string | null;
+  audio_config: {
+    input?: {
+      format?: string;
+      sample_rate?: number;
+    };
+    output?: {
+      format?: string;
+      sample_rate?: number;
+      voice?: string;
+    };
+  };
+  transcription_config: {
+    model?: string;
+    language?: string | null;
+    prompt?: string | null;
+  };
+  turn_detection: {
+    type?: string;
+    threshold?: number;
+    prefix_padding_ms?: number;
+    silence_duration_ms?: number;
+  };
+  temperature: number;
+  max_response_output_tokens: number;
+  tools: Array<{
+    type: string;
+    name: string;
+    description?: string;
+    parameters?: Record<string, unknown>;
+  }>;
+  webhook_url: string | null;
+  webhook_events_filter: string[];
+  enable_moderation: boolean;
+  enable_audio_compression: boolean;
+  description: string | null;
+  metadata: Record<string, unknown>;
+  created_at: string;
+  updated_at: string;
+  created_by: string | null;
+}
+
+export type ExperimentStatus = 'draft' | 'active' | 'paused' | 'completed' | 'cancelled';
+export type SuccessMetric = 'response_time' | 'success_rate' | 'cost' | 'user_satisfaction' | 'engagement';
+
+export interface ABExperiment {
+  id: string;
+  name: string;
+  description: string | null;
+  function_key: string;
+  status: ExperimentStatus;
+  traffic_split: Record<string, number>;
+  start_date: string | null;
+  end_date: string | null;
+  success_metric: SuccessMetric;
+  min_sample_size: number;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ABVariant {
+  id: string;
+  experiment_id: string;
+  variant_name: string;
+  function_config_id: string | null;
+  traffic_percentage: number;
+  is_control: boolean;
+  description: string | null;
+  created_at: string;
+}
+
+export interface ABAssignment {
+  id: string;
+  experiment_id: string;
+  user_id: string;
+  variant_id: string;
+  assigned_at: string;
+  last_used_at: string | null;
+}
+
+export interface ABResult {
+  id: string;
+  experiment_id: string;
+  variant_id: string;
+  total_interactions: number;
+  successful_interactions: number;
+  failed_interactions: number;
+  avg_response_time_ms: number;
+  total_tokens: number;
+  estimated_cost: number;
+  avg_user_satisfaction: number | null;
+  calculated_at: string;
+  updated_at: string;
+}
+
+export interface ABExperimentWithVariants extends ABExperiment {
+  variants: Array<ABVariant & { function_config?: AiFunctionConfigWithRelations; results?: ABResult }>;
+  results?: ABResult[];
+}
+
+export interface RealtimeConfigCreate {
+  config_name: string;
+  config_type: 'realtime' | 'transcription';
+  is_active?: boolean;
+  model?: string;
+  instructions?: string | null;
+  audio_config?: RealtimeConfig['audio_config'];
+  transcription_config?: RealtimeConfig['transcription_config'];
+  turn_detection?: RealtimeConfig['turn_detection'];
+  temperature?: number;
+  max_response_output_tokens?: number;
+  tools?: RealtimeConfig['tools'];
+  webhook_url?: string | null;
+  webhook_events_filter?: string[];
+  enable_moderation?: boolean;
+  enable_audio_compression?: boolean;
+  description?: string | null;
+  metadata?: Record<string, unknown>;
 }
 

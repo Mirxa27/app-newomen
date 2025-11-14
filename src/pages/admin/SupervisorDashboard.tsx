@@ -63,8 +63,24 @@ export default function SupervisorDashboard() {
       });
 
       if (error) {
-        const errorMsg = await error?.context?.text();
-        throw new Error(errorMsg || 'Batch analysis failed');
+        // Handle different error formats
+        let errorMsg = 'Batch analysis failed';
+        if (typeof error === 'string') {
+          errorMsg = error;
+        } else if (error?.message) {
+          errorMsg = error.message;
+        } else if (error?.context) {
+          try {
+            if (typeof error.context === 'string') {
+              errorMsg = error.context;
+            } else if (error.context?.message) {
+              errorMsg = error.context.message;
+            }
+          } catch (e) {
+            // Ignore parsing errors
+          }
+        }
+        throw new Error(errorMsg);
       }
 
       toast.success(`Analysis complete: ${data.analyzed} interactions analyzed, ${data.skipped} skipped`);

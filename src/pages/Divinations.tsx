@@ -14,7 +14,7 @@ export default function Divinations() {
         <div className="space-y-2">
           <h1 className="text-3xl xl:text-4xl font-bold flex items-center gap-3">
             <img 
-              src="https://miaoda-conversation-file.s3cdn.medo.dev/user-7cvlvulsgrnk/conv-7fi4fbzoge80/20251112/file-7i2qocv7vev4.png" 
+              src="/images/newomen-icon.png" 
               alt="NewMe" 
               className="h-10 w-10 object-contain"
             />

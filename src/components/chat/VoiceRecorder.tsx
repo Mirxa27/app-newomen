@@ -30,17 +30,48 @@ export function VoiceRecorder({ onTranscript, disabled }: VoiceRecorderProps) {
 
   const startRecording = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      // Request microphone with mobile-optimized constraints
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+          // Mobile optimizations
+          channelCount: 1,
+          sampleRate: 16000, // Standard for speech recognition
+        } 
+      });
       
       const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
-      const audioContext = new AudioContextClass();
+      const audioContext = new AudioContextClass({ 
+        sampleRate: 16000,
+        latencyHint: 'interactive',
+      });
+      
+      // Resume if suspended (mobile browsers)
+      if (audioContext.state === 'suspended') {
+        await audioContext.resume();
+      }
+      
       const source = audioContext.createMediaStreamSource(stream);
       const analyser = audioContext.createAnalyser();
       analyser.fftSize = 256;
+      analyser.smoothingTimeConstant = 0.8;
       source.connect(analyser);
       analyserRef.current = analyser;
 
-      const mediaRecorder = new MediaRecorder(stream);
+      // Use webm for better mobile browser support
+      const mimeType = MediaRecorder.isTypeSupported('audio/webm') 
+        ? 'audio/webm' 
+        : MediaRecorder.isTypeSupported('audio/mp4')
+        ? 'audio/mp4'
+        : 'audio/webm'; // fallback
+      
+      const mediaRecorder = new MediaRecorder(stream, {
+        mimeType: mimeType,
+        audioBitsPerSecond: 128000, // Good quality for speech
+      });
+      
       mediaRecorderRef.current = mediaRecorder;
       audioChunksRef.current = [];
 
@@ -51,7 +82,9 @@ export function VoiceRecorder({ onTranscript, disabled }: VoiceRecorderProps) {
       };
 
       mediaRecorder.onstop = async () => {
-        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        const audioBlob = new Blob(audioChunksRef.current, { 
+          type: mimeType || 'audio/webm' 
+        });
         stream.getTracks().forEach(track => track.stop());
         
         if (analyserRef.current) {
@@ -61,14 +94,24 @@ export function VoiceRecorder({ onTranscript, disabled }: VoiceRecorderProps) {
         await processAudio(audioBlob);
       };
 
-      mediaRecorder.start();
+      mediaRecorder.start(100); // Collect data every 100ms for better mobile performance
       setIsRecording(true);
       visualizeAudio();
       
       toast.success('Recording started');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error starting recording:', error);
-      toast.error('Failed to access microphone');
+      
+      // Provide specific error messages
+      if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
+        toast.error('Microphone permission denied. Please enable microphone access in your browser settings.');
+      } else if (error.name === 'NotFoundError' || error.name === 'DevicesNotFoundError') {
+        toast.error('No microphone found. Please connect a microphone.');
+      } else if (error.name === 'NotSupportedError') {
+        toast.error('Audio recording not supported in this browser.');
+      } else {
+        toast.error('Failed to access microphone. Please check your browser settings.');
+      }
     }
   };
 
@@ -105,11 +148,45 @@ export function VoiceRecorder({ onTranscript, disabled }: VoiceRecorderProps) {
     setIsProcessing(true);
     
     try {
-      // Use Web Speech API for transcription
+      // Try OpenAI Whisper API first (more accurate, especially for mobile)
+      const openaiApiKey = import.meta.env.VITE_OPENAI_API_KEY;
+      
+      if (openaiApiKey) {
+        try {
+          // Convert blob to File for FormData
+          const audioFile = new File([audioBlob], 'audio.webm', { type: 'audio/webm' });
+          const formData = new FormData();
+          formData.append('file', audioFile);
+          formData.append('model', 'whisper-1');
+          formData.append('language', 'en');
+
+          const response = await fetch('https://api.openai.com/v1/audio/transcriptions', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${openaiApiKey}`,
+            },
+            body: formData,
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            const transcript = data.text;
+            onTranscript(transcript);
+            toast.success('Voice message transcribed');
+            setIsProcessing(false);
+            return;
+          }
+        } catch (openaiError) {
+          console.error('OpenAI transcription error:', openaiError);
+          // Fall through to Web Speech API
+        }
+      }
+
+      // Fallback to Web Speech API
       const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
       
       if (!SpeechRecognition) {
-        toast.error('Speech recognition not supported in this browser');
+        toast.error('Speech recognition not supported. Please type your message.');
         setIsProcessing(false);
         return;
       }
@@ -118,34 +195,41 @@ export function VoiceRecorder({ onTranscript, disabled }: VoiceRecorderProps) {
       recognition.lang = 'en-US';
       recognition.continuous = false;
       recognition.interimResults = false;
+      recognition.maxAlternatives = 1;
 
-      // Convert blob to audio element for recognition
-      const audioUrl = URL.createObjectURL(audioBlob);
-      const audio = new Audio(audioUrl);
-      
       recognition.onresult = (event: any) => {
         const transcript = event.results[0][0].transcript;
         onTranscript(transcript);
         toast.success('Voice message transcribed');
+        setIsProcessing(false);
       };
 
       recognition.onerror = (event: any) => {
         console.error('Speech recognition error:', event.error);
-        toast.error('Failed to transcribe audio. Please try typing instead.');
+        let errorMessage = 'Failed to transcribe audio. Please try typing instead.';
+        
+        if (event.error === 'no-speech') {
+          errorMessage = 'No speech detected. Please try again.';
+        } else if (event.error === 'audio-capture') {
+          errorMessage = 'No microphone found. Please check your device.';
+        } else if (event.error === 'not-allowed') {
+          errorMessage = 'Microphone permission denied. Please enable microphone access.';
+        }
+        
+        toast.error(errorMessage);
+        setIsProcessing(false);
       };
 
       recognition.onend = () => {
         setIsProcessing(false);
-        URL.revokeObjectURL(audioUrl);
       };
 
-      // Play audio to trigger recognition
-      audio.play();
+      // Start recognition
       recognition.start();
       
     } catch (error) {
       console.error('Error processing audio:', error);
-      toast.error('Failed to process audio');
+      toast.error('Failed to process audio. Please try typing instead.');
       setIsProcessing(false);
     }
   };
@@ -165,14 +249,15 @@ export function VoiceRecorder({ onTranscript, disabled }: VoiceRecorderProps) {
         disabled={disabled || isProcessing}
         size="icon"
         variant={isRecording ? 'destructive' : 'default'}
-        className="relative overflow-hidden"
+        className="relative overflow-hidden h-[52px] w-[52px] sm:h-10 sm:w-10 touch-manipulation"
+        aria-label={isRecording ? 'Stop recording' : 'Start voice recording'}
       >
         {isProcessing ? (
-          <Loader2 className="h-5 w-5 animate-spin" />
+          <Loader2 className="h-4 w-4 sm:h-5 sm:w-5 animate-spin" />
         ) : isRecording ? (
-          <MicOff className="h-5 w-5" />
+          <MicOff className="h-4 w-4 sm:h-5 sm:w-5" />
         ) : (
-          <Mic className="h-5 w-5" />
+          <Mic className="h-4 w-4 sm:h-5 sm:w-5" />
         )}
         
         {isRecording && (

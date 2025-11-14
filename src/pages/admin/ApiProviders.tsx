@@ -12,6 +12,14 @@ import { db } from '@/db/api';
 import type { ApiProvider, ApiProviderSafe, ProviderType } from '@/types/types';
 import { toast } from 'sonner';
 
+// Helper function to check if provider supports voice fetching
+const supportsVoiceFetching = (providerName: string): boolean => {
+  const nameLower = providerName.toLowerCase();
+  return nameLower.includes('openai') || 
+         nameLower.includes('google') || 
+         nameLower.includes('elevenlabs');
+};
+
 export default function ApiProviders() {
   const [providers, setProviders] = useState<ApiProviderSafe[]>([]);
   const [loading, setLoading] = useState(true);
@@ -48,21 +56,71 @@ export default function ApiProviders() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Validation
+    if (!formData.name.trim()) {
+      toast.error('Provider name is required');
+      return;
+    }
+
+    if (formData.api_url && !formData.api_url.startsWith('http://') && !formData.api_url.startsWith('https://')) {
+      toast.error('API URL must start with http:// or https://');
+      return;
+    }
+
+    if (!formData.api_key && formData.type !== 'other') {
+      toast.error('API key is required for this provider type');
+      return;
+    }
+
     try {
       if (editingProvider) {
         await db.apiProviders.update(editingProvider.id, formData);
-        toast.success('Provider updated successfully');
+        toast.success('Provider updated successfully', {
+          description: 'Edge function cache will refresh within 5 seconds. If voice chat still shows an error, wait 5-10 seconds and try again.',
+          duration: 8000,
+        });
+        
+        // If this is OpenAI and it's being activated, show helpful message
+        if (formData.name.toLowerCase() === 'openai' && formData.is_active && formData.api_key) {
+          toast.info('OpenAI provider is now active', {
+            description: 'Voice chat should work after cache refresh (5-10 seconds). Make sure the provider name is exactly "OpenAI" (case-insensitive).',
+            duration: 10000,
+          });
+        }
       } else {
         await db.apiProviders.create(formData);
-        toast.success('Provider created successfully');
+        toast.success('Provider created successfully', {
+          description: 'Edge function cache will refresh within 5 seconds.',
+          duration: 8000,
+        });
+        
+        // If this is OpenAI, show helpful message
+        if (formData.name.toLowerCase() === 'openai' && formData.is_active && formData.api_key) {
+          toast.info('OpenAI provider created', {
+            description: 'Voice chat should work after cache refresh (5-10 seconds). Make sure the provider name is exactly "OpenAI" (case-insensitive).',
+            duration: 10000,
+          });
+        }
       }
 
       setDialogOpen(false);
       resetForm();
       loadProviders();
-    } catch (error) {
+      
+      // Note: Edge function cache will refresh within 5 seconds
+      // If voice chat still shows error, wait a few seconds and try again
+    } catch (error: unknown) {
       console.error('Error saving provider:', error);
-      toast.error('Failed to save provider');
+      
+      // Handle duplicate key error (provider name already exists)
+      const errorMessage = error instanceof Error ? error.message : '';
+      if (errorMessage.includes('duplicate key') || errorMessage.includes('unique constraint') || (error as { code?: string })?.code === '23505') {
+        toast.error(`A provider with the name "${formData.name}" already exists. Please use a different name.`);
+      } else if (errorMessage) {
+        toast.error(errorMessage);
+      } else {
+        toast.error('Failed to save provider');
+      }
     }
   };
 
@@ -125,10 +183,11 @@ export default function ApiProviders() {
     try {
       const models = await db.apiProviders.fetchModels(id);
       toast.success(`Fetched ${models.length} models successfully`);
-      // Optionally navigate to models page or show models
+      loadProviders(); // Refresh the list
     } catch (error) {
       console.error('Error fetching models:', error);
-      toast.error('Failed to fetch models');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to fetch models';
+      toast.error(errorMessage);
     } finally {
       setFetchingModelsId(null);
     }
@@ -139,10 +198,11 @@ export default function ApiProviders() {
     try {
       const voices = await db.apiProviders.fetchVoices(id);
       toast.success(`Fetched ${voices.length} voices successfully`);
-      // Optionally navigate to voices page or show voices
+      loadProviders(); // Refresh the list
     } catch (error) {
       console.error('Error fetching voices:', error);
-      toast.error('Failed to fetch voices');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to fetch voices';
+      toast.error(errorMessage);
     } finally {
       setFetchingVoicesId(null);
     }
@@ -374,8 +434,12 @@ export default function ApiProviders() {
                             size="sm"
                             variant="outline"
                             onClick={() => handleFetchVoices(provider.id)}
-                            disabled={fetchingVoicesId === provider.id || !provider.has_api_key}
-                            title="Fetch Voices"
+                            disabled={fetchingVoicesId === provider.id || (!provider.has_api_key && !supportsVoiceFetching(provider.name))}
+                            title={
+                              !supportsVoiceFetching(provider.name)
+                                ? `"${provider.name}" does not support automatic voice fetching. Supported: OpenAI, Google, ElevenLabs`
+                                : "Fetch Voices"
+                            }
                           >
                             {fetchingVoicesId === provider.id ? (
                               <Loader2 className="w-4 h-4 animate-spin" />

@@ -1,8 +1,12 @@
-import { createClient } from 'npm:@supabase/supabase-js@2';
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { createClient } from 'jsr:@supabase/supabase-js@2';
 
+// CORS headers helper
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS, GET',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-client-info, apikey',
+  'Access-Control-Max-Age': '86400',
 };
 
 interface RequestBody {
@@ -11,7 +15,10 @@ interface RequestBody {
 
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
+    return new Response(null, {
+      status: 200,
+      headers: corsHeaders,
+    });
   }
 
   try {
@@ -83,15 +90,28 @@ Deno.serve(async (req: Request) => {
       .eq('id', provider_id);
 
     return new Response(JSON.stringify(testResult), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,
+      headers: { 
+        'Content-Type': 'application/json',
+        ...corsHeaders,
+      },
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error testing connection:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      status: 400,
-    });
+    return new Response(
+      JSON.stringify({ 
+        success: false,
+        error: error?.message || 'Unknown error',
+        message: error?.message || 'Failed to test connection',
+      }), 
+      {
+        status: 500,
+        headers: { 
+          'Content-Type': 'application/json',
+          ...corsHeaders,
+        },
+      }
+    );
   }
 });
 
